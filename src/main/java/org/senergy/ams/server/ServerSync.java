@@ -6,6 +6,7 @@
 package org.senergy.ams.server;
 
 import com.sun.net.httpserver.*;
+import org.senergy.ams.app.Constants;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.server.HttpHandlers.AccountOperations;
 import org.senergy.ams.server.HttpHandlers.DbEntityOperations;
@@ -14,6 +15,7 @@ import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.util.logging.Level;
@@ -28,73 +30,69 @@ public class ServerSync {
     public static void start(int port)  {
         try{
 
-
-            if(Config.enableHttps)
+            HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(),port), 0);
+            server.createContext(Constants.ACCOUNT_OPERATION_URL,new AccountOperations());
+            server.createContext(Constants.DBENTITY_OPERATION_URL,new DbEntityOperations());
+//                context.setHandler(ServerSync::handleRequest);
+            server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(10));
+            if(!Config.enableHttps)
             {
-                Config.logger.info("Staring HTTPS port at :"+port);
-                HttpsServer server = HttpsServer.create(new InetSocketAddress(port), 0);
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-
-                // initialise the keystore
-                char[] password = Config.keyStorePassword.toCharArray();
-                KeyStore ks = KeyStore.getInstance(Config.keyStoreType);
-                FileInputStream fis = new FileInputStream(Config.sslKeyStorePathWithName);
-                ks.load(fis, password);
-
-                // setup the key manager factory
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-//            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                kmf.init(ks, password);
-
-                // setup the trust manager factory
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-                tmf.init(ks);
-
-                // setup the HTTPS context and parameters
-                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-                server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
-                    @Override
-                    public void configure(HttpsParameters params) {
-                        try {
-                            // initialise the SSL context
-                            SSLContext c = getSSLContext();
-                            SSLEngine engine = c.createSSLEngine();
-                            /*//System.out.println("$$$$$$$$"+c.getDefault().getSupportedSSLParameters().getProtocols());
-                            for (String s:c.getDefault().getSupportedSSLParameters().getProtocols()
-                                 ) {
-                                //System.out.println("$$$$$$$$1 :"+s);
-                            }*/
-                            params.setNeedClientAuth(true);
-                            params.setCipherSuites(engine.getEnabledCipherSuites());
-                            params.setProtocols(engine.getEnabledProtocols());
-
-                            // Set the SSL parameters
-                            SSLParameters sslParameters = c.getSupportedSSLParameters();
-                            params.setSSLParameters(sslParameters);
-
-                        } catch (Exception ex) {
-//                            //System.out.println("Failed to create HTTPS port");
-                            Config.logger.info("Failed to create HTTPS port");
-                            //System.out.println(ex.getMessage());
-                            ex.printStackTrace();
-                        }
-                    }
-                });
-
-                HttpContext context = server.createContext("/");
-                context.setHandler(ServerSync::handleRequest);
-                server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(10));
                 server.start();
-                Config.logger.info("HTTPS Server running  port at :"+port);
+                System.out.println("http server started at : http:/"+ server.getAddress());
             }else
             {
-                HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-                server.createContext("/accountOperations",new AccountOperations());
-                server.createContext("/dbEntityOperations",new DbEntityOperations());
-//                context.setHandler(ServerSync::handleRequest);
-                server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(10));
-                server.start();
-                System.out.println("http server started at : "+ port);
+
+//                Config.logger.info("Staring HTTPS port at :"+port);
+//
+//                SSLContext sslContext = SSLContext.getInstance("TLS");
+//
+//                // initialise the keystore
+//                char[] password = Config.keyStorePassword.toCharArray();
+//                KeyStore ks = KeyStore.getInstance(Config.keyStoreType);
+//                FileInputStream fis = new FileInputStream(Config.sslKeyStorePathWithName);
+//                ks.load(fis, password);
+//
+//                // setup the key manager factory
+//                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+////            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+//                kmf.init(ks, password);
+//
+//                // setup the trust manager factory
+//                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+//                tmf.init(ks);
+//
+//                // setup the HTTPS context and parameters
+//                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+//                server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+//                    @Override
+//                    public void configure(HttpsParameters params) {
+//                        try {
+//                            // initialise the SSL context
+//                            SSLContext c = getSSLContext();
+//                            SSLEngine engine = c.createSSLEngine();
+//                            /*//System.out.println("$$$$$$$$"+c.getDefault().getSupportedSSLParameters().getProtocols());
+//                            for (String s:c.getDefault().getSupportedSSLParameters().getProtocols()
+//                                 ) {
+//                                //System.out.println("$$$$$$$$1 :"+s);
+//                            }*/
+//                            params.setNeedClientAuth(true);
+//                            params.setCipherSuites(engine.getEnabledCipherSuites());
+//                            params.setProtocols(engine.getEnabledProtocols());
+//
+//                            // Set the SSL parameters
+//                            SSLParameters sslParameters = c.getSupportedSSLParameters();
+//                            params.setSSLParameters(sslParameters);
+//
+//                        } catch (Exception ex) {
+////                            //System.out.println("Failed to create HTTPS port");
+//                            Config.logger.info("Failed to create HTTPS port");
+//                            //System.out.println(ex.getMessage());
+//                            ex.printStackTrace();
+//                        }
+//                    }
+//                });
+//                server.start();
+//                Config.logger.info("HTTPS Server running  port at :https:/"+server.getAddress());
             }
 
 
