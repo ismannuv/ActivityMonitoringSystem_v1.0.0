@@ -6,8 +6,12 @@ package org.senergy.ams.model;
 
 import SIPLlib.Helper;
 import SIPLlib.SimpleCrypto;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Encoders;
 
+import javax.crypto.SecretKey;
 import java.io.*;
+import java.security.Key;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -57,7 +61,8 @@ public class Config {
     public static String DBname;
     public static String DBuser;
     public static String DBpassword;
-
+    public static SecretKey JWT_KEY;
+    public static String JWT_KEY_STRING;
 
     public void init() {
         Properties prop = new Properties();
@@ -75,8 +80,8 @@ public class Config {
                     throw new FileNotFoundException("property file not found");
                 }
             }
-
-
+            JWT_KEY = Jwts.SIG.HS256.key().build();
+            JWT_KEY_STRING=Encoders.BASE64.encode(JWT_KEY.getEncoded());
             DBip = prop.getProperty("DBip");
             DBport = prop.getProperty("DBport");
             DBname = prop.getProperty("DBname");

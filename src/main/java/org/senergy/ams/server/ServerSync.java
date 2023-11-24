@@ -30,7 +30,7 @@ public class ServerSync {
     public static void start(int port)  {
         try{
 
-            HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(),port), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress("192.168.1.65",port), 0);
             server.createContext(Constants.ACCOUNT_OPERATION_URL,new AccountOperations());
             server.createContext(Constants.DBENTITY_OPERATION_URL,new DbEntityOperations());
 //                context.setHandler(ServerSync::handleRequest);

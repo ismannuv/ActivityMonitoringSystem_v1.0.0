@@ -2,12 +2,21 @@ package org.senergy.ams.model.entity;
 
 import SIPLlib.DBaccess2;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
 public class Operator extends DBentity {
     public static final String ENTITY_NANE="Operator";
+    public static final int SUPER_ADMIN = 1,DB_ADMIN=2,ADMIN=3;
+    public String id;
+    private String password;
+    protected String name;
+    private String emailId;
+    public String mobileCountryCode,mobileNo;
+    public int type;
 
     public boolean login() {
         return true;
@@ -153,8 +162,47 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public void fromJson(JsonObject json) {
+    public JsonObject toJson() {
+        JsonObject obj = new JsonObject();
+        if (this.id != null) {
+            obj.add("id", new JsonPrimitive(this.id));
+        } else {
+            obj.add("id", new JsonPrimitive(""));
+        }
+        if (this.name != null) {
+            obj.add("name", new JsonPrimitive(this.name));
+        } else {
+            obj.add("name", new JsonPrimitive(""));
+        }
+        if (this.emailId != null) {
+            obj.add("emailId", new JsonPrimitive(this.emailId));
+        } else {
+            obj.add("emailId", new JsonPrimitive(""));
+        }
+        return obj;
+    }
 
+    @Override
+    public void fromJson(JsonObject json) {
+        JsonElement je;
+        je = json.get("id");
+        if (je != null) {
+            this.id = je.getAsString();
+        }
+        je = json.get("name");
+        if (je != null) {
+            this.name = je.getAsString();
+        }
+        je = json.get("emailId");
+        if (je != null) {
+            this.emailId = je.getAsString().equals("") ? null :je.getAsString();
+        }
+
+        je = json.get("password");
+        if (je != null) {
+            this.password = je.getAsString();
+        }
 
     }
+
 }
