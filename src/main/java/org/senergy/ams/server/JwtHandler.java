@@ -55,7 +55,7 @@ public class JwtHandler {
 
             if (authorizationHeaders != null && !authorizationHeaders.isEmpty()) {
                 String authorizationHeader = authorizationHeaders.get(0);
-                if (authorizationHeader.startsWith("Bearer ")) {
+                if (authorizationHeader.startsWith("Bearer ") ) {
                     // Extract the token without the "Bearer " prefix
                     status=this.validateJwtToken(authorizationHeader.substring(7),Config.JWT_KEY);
 

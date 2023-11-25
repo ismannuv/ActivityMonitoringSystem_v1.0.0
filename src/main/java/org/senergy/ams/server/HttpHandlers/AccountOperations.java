@@ -21,8 +21,24 @@ public class AccountOperations implements HttpHandler {
 //        System.out.println(path);
 
         Headers headers = exchange.getResponseHeaders();
+        // Allow all origins (replace "*" with the specific origin you want to allow)
+        headers.add("Access-Control-Allow-Origin", "*");
+
+        // Allow specific headers
+        headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+        // Allow specific HTTP methods
+        headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+
+        // Set the maximum age for the preflight request (in seconds)
+        headers.add("Access-Control-Max-Age", "3600");
 
         try {
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                // For CORS preflight requests, just return 200 OK
+                exchange.sendResponseHeaders(200, -1);
+                return;
+            }
             InputStream requestBody = exchange.getRequestBody();
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(requestBody);
@@ -70,6 +86,7 @@ public class AccountOperations implements HttpHandler {
                 jsonResponse.setError(ex);
                 Helper.printStackTrace(ex);
             }
+
             exchange.sendResponseHeaders(200, jsonResponse.toString().length());
             OutputStream os = exchange.getResponseBody();
             os.write(jsonResponse.toString().getBytes());

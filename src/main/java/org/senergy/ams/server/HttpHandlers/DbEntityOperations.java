@@ -37,7 +37,6 @@ public class DbEntityOperations implements HttpHandler {
                 switch (jsonRequest.operation){
                     case DBentity.ADD:
                     {
-
                     }
                     break;
                     case DBentity.GET:
