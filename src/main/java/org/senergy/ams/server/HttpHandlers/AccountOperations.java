@@ -3,12 +3,14 @@ package org.senergy.ams.server.HttpHandlers;
 import SIPLlib.Helper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.Json;
-import org.senergy.ams.model.entity.Operator;
+import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.JwtHandler;
 
 import java.io.InputStream;
@@ -32,6 +34,7 @@ public class AccountOperations implements HttpHandler {
 
         // Set the maximum age for the preflight request (in seconds)
         headers.add("Access-Control-Max-Age", "3600");
+        headers.add("Access-Control-Allow-Credentials", "true");
 
         try {
             if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -46,23 +49,28 @@ public class AccountOperations implements HttpHandler {
             Json jsonResponse = new Json(jsonRequest.operation);
             JwtHandler jwtHandler = new JwtHandler();
             //if user is login
-            if(jsonRequest.operation != Operator.Operation_enum.LOGIN.getValue())
+            if(jsonRequest.operation != User.Operation_enum.LOGIN.getValue())
             {
                 if(jwtHandler.isValidUser(exchange, jsonResponse))
                     return;
             }
             try {
-                switch (Operator.Operation_enum.get(jsonRequest.operation)){
+                switch (User.Operation_enum.get(jsonRequest.operation)){
                     case LOGIN:
                     {
-                        Operator newOp = new Operator();
+                        User newOp = new User();
                         newOp.fromJson(jsonRequest.data.get(0).getAsJsonObject());
                         if (newOp.login()) {
                             jsonResponse.data.add(newOp.toJson());
                             jsonResponse.status = true;
 
                             String jwt = jwtHandler.createJwtToken(newOp.toJson().toString(), Config.JWT_KEY);
-                            headers.add("Set-Cookie", "jwt=" + jwt);
+
+                            JsonObject obj=jsonResponse.data.get(0).getAsJsonObject();
+                            obj.add("jwt",new JsonPrimitive(jwt));
+                            jsonResponse.data.remove(0);
+                            jsonResponse.data.add(obj);
+                            headers.add("Set-Cookie", "jwt=" + jwt );
                         } else {
                             jsonResponse.data.add(newOp.toJson());
                             jsonResponse.setError("Invalid user!");
