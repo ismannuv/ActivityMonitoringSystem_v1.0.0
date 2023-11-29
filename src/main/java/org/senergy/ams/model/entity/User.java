@@ -81,6 +81,11 @@ public class User extends DBentity {
     {
         super(ENTITY_NANE,0);
     }
+    public User(String id) {
+
+        super(ENTITY_NANE,0);
+        this.id = id;
+    }
     public boolean login() {
         return true;
     }
@@ -89,7 +94,15 @@ public class User extends DBentity {
     public String getIdentifier() {
         return null;
     }
-
+    public boolean addDBentity(DBentity entity) throws DBoperationException {
+        entity.sessionId=this.sessionId;
+        if (entity.add(null)) {
+//            AuditTrail.operatorLog(this, entity, DBentity.ADD,"");
+            return true;
+        } else {
+            throw new DBoperationException(ADD,"");
+        }
+    }
     @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
         return false;
@@ -203,4 +216,5 @@ public class User extends DBentity {
         }
 
     }
+
 }

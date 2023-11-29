@@ -1,10 +1,14 @@
 package org.senergy.ams.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.Json;
+import org.senergy.ams.model.entity.User;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -16,6 +20,10 @@ import java.util.List;
 
 public class JwtHandler {
 
+    public User webOperator=null;
+    public void JwtHandler(){
+        this.webOperator=null;
+    }
     public String createJwtToken(String userObj, Key key)
     {
         String jwt=null;
@@ -39,10 +47,21 @@ public class JwtHandler {
             //jwt expired
 
         }else {
-            String userObj= (String) claims.get("user");
-            //check here user is existing or not
-            System.out.println(" :"+userObj);
-            status=true;
+
+            try {
+                String user= (String) claims.get("user");
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode userObj = null;
+                userObj = objectMapper.readTree(user);
+                //check here user is existing or not
+                System.out.println("jwt user :"+userObj);
+                webOperator= new User(userObj.get("id").asText());
+                status=true;
+            } catch (JsonProcessingException e) {
+                status=true;
+            }
+
+
         }
         return status;
     }
