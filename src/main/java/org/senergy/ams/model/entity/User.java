@@ -1,6 +1,9 @@
 package org.senergy.ams.model.entity;
 
 import SIPLlib.DBaccess2;
+import SIPLlib.DataTable;
+import SIPLlib.Helper;
+import SIPLlib.SIPLlibException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -8,15 +11,25 @@ import com.google.gson.JsonPrimitive;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
+import java.math.BigInteger;
+
 public class User extends DBentity {
     public final static String ENTITY_NANE="User";
-    public static final int SUPER_ADMIN = 0,DB_ADMIN=1,ADMIN=3,SUPERVISOR=4,ATTENDANT=5;
+    public static final int DUMMY_USER=0,SUPER_ADMIN = 1,DB_ADMIN=2,ADMIN=3,SUPERVISOR=4,ATTENDANT=5;
     public String id;
     private String password;
     protected String name;
     private String emailId;
-    public String mobileCountryCode,mobileNo;
+    public String mobileNo;
     public int type;
+    public PrivilegeGroup privilegeGroup;
+    public BigInteger cardUID;
+    public String pin;
+    public String validFrom,validUpto;
+    public int fp1,fp2;
+    private String enrolledFingers;
+
+
     public enum Operation_enum {
 
         UNKNOWN(0), LOGIN(1), LOGOUT(2), EDIT_PROFILE(3), CHANGE_PASSWORD(4),GET_SESSION(5),SET_SESSION(6),RESET_PASSWORD_ACCEPT(7),REQUEST_RESET_PASSWORD(8),SWITCH_LOCATION(9),RESET_PASSWORD_REJECT(10),VERIFY_PASSWORD(11), GET_RESET_PASS_REQUEST(12),GET_DB_STATISTICS_DATA(13),GET_NOTIFICATIONS(14),DISMISS_NOTIFICATION(15),PROCESS_STATUS(16),MAKE_AUDIT_LOG(17),SET_IDLE(18),GET_LICENCE_KEY(19),VERIFY_AD_PASSWORD(20);
@@ -105,7 +118,31 @@ public class User extends DBentity {
     }
     @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
-        return false;
+        try{
+            this.createDBcon(conObj);
+
+            if(this.cardUID!=null && DBcon.dqlQuery("select u.id,u.name from user u where u.cardUid="+this.cardUID))
+            {
+                DataTable dt=DBcon.getResultSet();
+                if(dt.next())
+                {
+                    throw new DBoperationException(ADD,"Card is already assigned to "+dt.getString("id")+" : "+dt.getString("name"));
+                }
+            }
+
+            if(DBcon.preparedQuery("insert into user (id,cardUid,name,emailId,mobileNo,pin,fp1,fp2) values(?,?,?,?,?,?,?,?,?)",this.id,this.cardUID,this.name,this.emailId,this.mobileNo,this.pin,this.fp1,this.fp2))
+            {
+                return true;
+            }
+            else
+            {
+                throw new DBoperationException(ADD, "Failed to insert into user table");
+            }
+        }
+        catch(SIPLlibException ex)
+        {
+            throw new DBoperationException(ADD, ex);
+        }
     }
 
     @Override
@@ -173,6 +210,18 @@ public class User extends DBentity {
         return null;
     }
 
+    private void getEnrolledFingers(DBaccess2 DBcon) throws SIPLlibException {
+        this.enrolledFingers="";
+        this.createDBcon(DBcon);
+        if(this.DBcon.dqlQuery("select GROUP_CONCAT(ub.`index`) as 'fingers' from userbiometrics ub where ub.`type`=1 and ub.userId='"+this.id+"'"))
+        {
+            DataTable dt=DBcon.getResultSet();
+            if(dt.next())
+            {
+                this.enrolledFingers=dt.getString("fingers");
+            }
+        }
+    }
     @Override
     public JsonObject toJson() {
         JsonObject obj = new JsonObject();
@@ -180,6 +229,11 @@ public class User extends DBentity {
             obj.add("id", new JsonPrimitive(this.id));
         } else {
             obj.add("id", new JsonPrimitive(""));
+        }
+        if(this.id!=null){
+            obj.add("type",new JsonPrimitive(this.type));
+        }else{
+            obj.add("type",new JsonPrimitive(0));
         }
         if (this.name != null) {
             obj.add("name", new JsonPrimitive(this.name));
@@ -190,6 +244,46 @@ public class User extends DBentity {
             obj.add("emailId", new JsonPrimitive(this.emailId));
         } else {
             obj.add("emailId", new JsonPrimitive(""));
+        }
+        if (this.mobileNo != null) {
+            obj.add("mobileNo", new JsonPrimitive(this.mobileNo));
+        } else {
+            obj.add("mobileNo", new JsonPrimitive(""));
+        }
+        if (this.privilegeGroup != null) {
+            obj.add("privilegeGroup", this.privilegeGroup.toJson());
+        } else {
+            obj.add("privilegeGroup", new JsonObject());
+        }
+        if (this.cardUID != null) {
+            obj.add("cardUID", new JsonPrimitive(Helper.byteArrayToHexString(this.cardUID.toByteArray())));
+        } else {
+            obj.add("cardUID", new JsonPrimitive(""));
+        }
+        if (this.pin != null) {
+            obj.add("pin", new JsonPrimitive(this.pin));
+        } else {
+            obj.add("pin", new JsonPrimitive(""));
+        }
+
+        obj.add("fp1", new JsonPrimitive(this.fp1));
+
+        obj.add("fp2", new JsonPrimitive(this.fp2));
+
+        if (this.validFrom != null) {
+            obj.add("validFrom", new JsonPrimitive(this.validFrom));
+        } else {
+            obj.add("validFrom", new JsonPrimitive(""));
+        }
+        if (this.validUpto != null) {
+            obj.add("validUpto", new JsonPrimitive(this.validUpto));
+        } else {
+            obj.add("validUpto", new JsonPrimitive(""));
+        }
+        if(this.enrolledFingers != null){
+            obj.add("enrolledFingers", new JsonPrimitive(this.enrolledFingers));
+        }else {
+            obj.add("enrolledFingers", new JsonPrimitive(""));
         }
         return obj;
     }
