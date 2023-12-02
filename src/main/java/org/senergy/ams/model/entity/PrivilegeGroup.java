@@ -347,6 +347,15 @@ public class PrivilegeGroup extends DBentity {
         } else {
             obj.add("name", new JsonPrimitive(""));
         }
+        if (this.menuPrivilege != null) {
+            JsonArray menuPrivilegeArray = new JsonArray();
+            for (int i = 0; i < this.menuPrivilege.length; i++) {
+                menuPrivilegeArray.add(new JsonPrimitive(this.menuPrivilege[i].toString(16)));
+                obj.add("menuPrivilege", menuPrivilegeArray);
+            }
+        } else {
+            obj.add("menuPrivilege", new JsonArray());
+        }
         if (this.operationPrivilege != null && this.operationPrivilege.length != 0) {
             JsonArray operationPrivilegeArray = new JsonArray();
             for (int i = 0; i < this.operationPrivilege.length; i++) {

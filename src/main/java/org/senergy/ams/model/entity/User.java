@@ -99,17 +99,53 @@ public class User extends DBentity {
         super(ENTITY_NANE,0);
         this.id = id;
     }
-    public User(String id,String name,BigInteger cardUID,String mobileNo,String emailId, int disabled){
+    public User(String id,String name,BigInteger cardUID,String mobileNo,String emailId,int type, int disabled){
         super(ENTITY_NANE,disabled);
         this.id=id;
         this.name=name;
         this.cardUID = cardUID;
         this.mobileNo=mobileNo;
         this.emailId=emailId;
+        this.type=type;
         this.disabled=disabled;
     }
-    public boolean login() {
-        return true;
+    public boolean login() throws DBoperationException {
+        try{
+            this.createDBcon(null);
+            if(DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.id='"+this.id+"'"))
+            {
+                DataTable dt=DBcon.getResultSet();
+                if(dt.next())
+                {
+                    this.id=dt.getString("id");
+                    this.name=dt.getString("name");
+                    this.cardUID=dt.getBigInteger("cardUid");
+                    this.mobileNo=dt.getString("mobileNo");
+                    this.emailId=dt.getString("email");
+                    this.disabled=dt.getInt("disabled");
+                    this.type=dt.getInt("type");
+                    JsonObject jsonObject =new JsonObject();
+                    jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
+
+                    this.privilegeGroup= (PrivilegeGroup) new PrivilegeGroup().get(DBcon,jsonObject);
+
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                throw  new DBoperationException(GET, "Query Failed");
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new DBoperationException(GET, ex);
+        }
     }
 
     @Override
@@ -211,7 +247,7 @@ public class User extends DBentity {
                 DataTable dt=DBcon.getResultSet();
                 if(dt.next())
                 {
-                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
+                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
                     JsonObject jsonObject =new JsonObject();
                     jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
 
@@ -264,7 +300,7 @@ public class User extends DBentity {
                 int i=0;
                 while(dt.next())
                 {
-                    entity[i]=new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
+                    entity[i]=new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
 
                     i++;
                 }
