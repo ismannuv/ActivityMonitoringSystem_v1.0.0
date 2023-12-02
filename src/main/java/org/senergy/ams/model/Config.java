@@ -53,6 +53,7 @@ public class Config {
     public static String keyStoreType;//JKS //PCKS12
     public static boolean enableHttps;
     public static String postUrl;
+    public static String serverIp;
     public static int serverPort;
     public static boolean debugMode;
 
@@ -104,6 +105,7 @@ public class Config {
 
             postUrl = prop.getProperty("postUrl","/faceApi");
             serverPort = Integer.parseInt(prop.getProperty("serverPort", "8050"));
+            serverIp = prop.getProperty("serverIp", "192.168.0.103");
 
             logIntoFile = Boolean.parseBoolean(prop.getProperty("logIntoFile", "false"));
             logOnConsole = Boolean.parseBoolean(prop.getProperty("logOnConsole", "true"));

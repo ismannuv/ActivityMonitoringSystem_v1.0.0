@@ -122,7 +122,7 @@ public class PrivilegeGroup extends DBentity {
     public boolean add(DBaccess2 conObj) throws DBoperationException {
         DBaccess2 DBcon = DBconnection.newInstance();
         try{
-            return DBcon.preparedQuery("insert into privilegeGroup(name,menuPrivilege,operationPrivilege,reportPrivilege) values(?,?,?,?)", this.name, this.getMenuPrivilegeBytes(), this.getOperationPrivilegeBytes(), "");
+            return DBcon.preparedQuery("insert into privilegeGroup(id,name,menuPrivilege,operationPrivilege,reportPrivilege) values(?,?,?,?,?)", this.id,this.name, this.getMenuPrivilegeBytes(), this.getOperationPrivilegeBytes(), "");
         }
         catch(Exception e){
             throw new RuntimeException("");
@@ -293,13 +293,13 @@ public class PrivilegeGroup extends DBentity {
             switch(all)
             {
                 case DBentity.GET_ALL_ENABLED:
-                    qry="select * from privilegegroup where id!=0 and disabled=0";
+                    qry="select * from privilegegroup where  disabled=0";
                     break;
                 case DBentity.GET_ALL_DISABLED:
-                    qry="select * from privilegegroup where id!=0 and disabled=1";
+                    qry="select * from privilegegroup where  disabled=1";
                     break;
                 default:
-                    qry="select * from privilegegroup where id!=0";
+                    qry="select * from privilegegroup ";
                     break;
             }
 //            this.DBcon.dqlQuery("select * from privilegegroup where id!=0");

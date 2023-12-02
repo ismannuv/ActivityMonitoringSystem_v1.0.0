@@ -27,10 +27,10 @@ import java.util.logging.Level;
 public class ServerSync {
 
     public static boolean isBusy;
-    public static void start(int port)  {
+    public static void start(String ip,int port)  {
         try{
 
-            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+            HttpServer server = HttpServer.create(new InetSocketAddress(ip,port), 0);
 //            HttpsServer server = HttpsServer.create(new InetSocketAddress("192.168.1.65",port), 0);
             server.createContext(Constants.ACCOUNT_OPERATION_URL,new AccountOperations());
             server.createContext(Constants.DBENTITY_OPERATION_URL,new DbEntityOperations());

@@ -12,6 +12,7 @@ import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
 import java.math.BigInteger;
+import java.security.MessageDigest;
 
 public class User extends DBentity {
     public final static String ENTITY_NANE="User";
@@ -112,7 +113,7 @@ public class User extends DBentity {
     public boolean login() throws DBoperationException {
         try{
             this.createDBcon(null);
-            if(DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.id='"+this.id+"'"))
+            if(DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.password='"+generateMD5(this.password)+"'"))
             {
                 DataTable dt=DBcon.getResultSet();
                 if(dt.next())
@@ -427,5 +428,53 @@ public class User extends DBentity {
         }
 
     }
+    public String generateMD5(String data) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(data.getBytes());
 
+            byte byteData[] = md.digest();
+
+            //convert the byte to hex format method 1
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < byteData.length; i++) {
+                sb.append(Integer.toString((byteData[i] & 0xff) + 0x100, 16).substring(1));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    public DBentity getUserFromPassword(DBaccess2 conObj,String password) throws DBoperationException {
+        try{
+            this.createDBcon(conObj);
+            if(DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.password='"+generateMD5(password)+"'"))
+            {
+                DataTable dt=DBcon.getResultSet();
+                if(dt.next())
+                {
+                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
+                    JsonObject jsonObject =new JsonObject();
+                    jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
+
+                    user.privilegeGroup= (PrivilegeGroup) new PrivilegeGroup().get(DBcon,jsonObject);
+
+
+                    return user;
+                }
+                else
+                {
+                    throw  new DBoperationException(GET, "Entity Not Found");
+                }
+            }
+            else
+            {
+                throw  new DBoperationException(GET, "Query Failed");
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new DBoperationException(GET, ex);
+        }
+    }
 }
