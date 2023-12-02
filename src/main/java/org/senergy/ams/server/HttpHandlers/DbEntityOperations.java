@@ -76,6 +76,17 @@ public class DbEntityOperations implements HttpHandler {
                     {
 
                     }break;
+                    case DBentity.GET_ALL_DISABLED:
+                    case DBentity.GET_ALL_ENABLED:
+                    case DBentity.GET_ALL:
+                        dbObjects = User.getAllDBentity( ((DBentity) DBentityClass),jsonRequest.data.get(0).getAsJsonObject());
+                        if(dbObjects != null){
+                            jsonResponse.status = true;
+                            for (int i = 0; i < dbObjects.length; i++) {
+                                jsonResponse.data.add(dbObjects[i].toJson());
+                            }
+                        }
+                    break;
                     default:
                     {
                         jsonResponse.setError("Operation not supported.");

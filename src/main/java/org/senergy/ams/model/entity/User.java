@@ -99,6 +99,15 @@ public class User extends DBentity {
         super(ENTITY_NANE,0);
         this.id = id;
     }
+    public User(String id,String name,BigInteger cardUID,String mobileNo,String emailId, int disabled){
+        super(ENTITY_NANE,disabled);
+        this.id=id;
+        this.name=name;
+        this.cardUID = cardUID;
+        this.mobileNo=mobileNo;
+        this.emailId=emailId;
+        this.disabled=disabled;
+    }
     public boolean login() {
         return true;
     }
@@ -115,6 +124,13 @@ public class User extends DBentity {
         } else {
             throw new DBoperationException(ADD,"");
         }
+    }
+    public static DBentity[] getAllDBentity(DBentity entity, JsonObject filter) throws DBoperationException {
+        return entity.getAll(null,filter);
+    }
+
+    public static DBentity getDBentity(DBentity entity,JsonObject obj)throws DBoperationException  {
+        return entity.get(null,obj);
     }
     @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
@@ -187,7 +203,37 @@ public class User extends DBentity {
 
     @Override
     public DBentity get(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
-        return null;
+        try{
+            this.id=obj.get("id").getAsString();
+            this.createDBcon(conObj);
+            if(DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.id='"+this.id+"'"))
+            {
+                DataTable dt=DBcon.getResultSet();
+                if(dt.next())
+                {
+                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
+                    JsonObject jsonObject =new JsonObject();
+                    jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
+
+                    user.privilegeGroup= (PrivilegeGroup) new PrivilegeGroup().get(DBcon,jsonObject);
+
+
+                    return user;
+                }
+                else
+                {
+                    throw  new DBoperationException(GET, "Entity Not Found");
+                }
+            }
+            else
+            {
+                throw  new DBoperationException(GET, "Query Failed");
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new DBoperationException(GET, ex);
+        }
     }
 
     @Override
@@ -197,7 +243,42 @@ public class User extends DBentity {
 
     @Override
     public DBentity[] getAll(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
-        return new DBentity[0];
+        try{
+            int all=filter.get("all").getAsInt();
+            this.createDBcon(conObj);
+            String qry="";
+            switch(all)
+            {
+
+                case DBentity.GET_ALL_ENABLED:
+                    qry="SELECT * FROM user u WHERE u.disabled!=0";
+                    break;
+                default:
+                    qry="SELECT * FROM user";
+                    break;
+            }
+            if(DBcon.dqlQuery(qry))
+            {
+                DataTable dt=DBcon.getResultSet();
+                User[] entity=new User[dt.getRowCount()];
+                int i=0;
+                while(dt.next())
+                {
+                    entity[i]=new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
+
+                    i++;
+                }
+                return entity;
+            }
+            else
+            {
+                throw  new DBoperationException(GET_ALL, "Query Failed");
+            }
+        }
+        catch(Exception ex)
+        {
+            throw new DBoperationException(GET_ALL, ex);
+        }
     }
 
     @Override

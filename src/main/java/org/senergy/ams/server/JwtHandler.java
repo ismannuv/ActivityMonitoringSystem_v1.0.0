@@ -3,10 +3,13 @@ package org.senergy.ams.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.HttpExchange;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.senergy.ams.model.Config;
+import org.senergy.ams.model.DBoperationException;
 import org.senergy.ams.model.Json;
 import org.senergy.ams.model.entity.User;
 
@@ -38,7 +41,7 @@ public class JwtHandler {
                 .compact();
         return jwt;
     }
-    private boolean validateJwtToken(String jwt,SecretKey key){
+    private boolean validateJwtToken(String jwt,SecretKey key) throws DBoperationException, JsonProcessingException {
         boolean status=false;
         Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt).getPayload();
         if(claims.getExpiration().before(new Date())){
@@ -48,18 +51,18 @@ public class JwtHandler {
 
         }else {
 
-            try {
                 String user= (String) claims.get("user");
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode userObj = null;
                 userObj = objectMapper.readTree(user);
-                //check here user is existing or not
+                //check here user is exist or not
                 System.out.println("jwt user :"+userObj);
-                webOperator= new User(userObj.get("id").asText());
+                webOperator= new User();
+                JsonObject jsonObject =new JsonObject();
+                jsonObject.add("id",new JsonPrimitive(userObj.get("id").asText()));
+                webOperator= (User) webOperator.get(null,jsonObject);
+
                 status=true;
-            } catch (JsonProcessingException e) {
-                status=true;
-            }
 
 
         }
