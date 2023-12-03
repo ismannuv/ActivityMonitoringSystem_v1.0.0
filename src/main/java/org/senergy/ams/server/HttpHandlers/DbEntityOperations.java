@@ -72,10 +72,38 @@ public class DbEntityOperations implements HttpHandler {
                         }
                     }
                     break;
+                    case DBentity.UPDATE:
+                    {
+                        dbObjects = new DBentity[jsonRequest.data.size()];
+                        for (int i = 0; i < dbObjects.length; i++) {
+                            dbObjects[i] = ((DBentity) DBentityClass);
+                            dbObjects[i].fromJson(jsonRequest.data.get(i).getAsJsonObject());
+                            if (webOperator.updateDBentity(dbObjects[i])) {
+                                jsonResponse.status = true;
+                            }
+                        }
+                    }
+                    break;
                     case DBentity.GET:
                     {
-
+                        dbObjects = new DBentity[1];
+                        dbObjects[0]=User.getDBentity(((DBentity) DBentityClass),(jsonRequest.data.get(0).getAsJsonObject()));
+                        if(dbObjects[0] != null)
+                        {
+                            jsonResponse.status = true;
+                            jsonResponse.data.add(dbObjects[0].toJson());
+                        }
                     }break;
+                    case DBentity.TEMPORARY_DELETE:
+                        if (webOperator.temporaryDeleteDBentity(((DBentity) DBentityClass), jsonRequest.data)) {
+                            jsonResponse.status = true;
+                        }
+                        break;
+                    case DBentity.RESTORE:
+                        if (webOperator.restoreDBentity(((DBentity) DBentityClass), jsonRequest.data)) {
+                            jsonResponse.status = true;
+                        }
+                        break;
                     case DBentity.GET_ALL_DISABLED:
                     case DBentity.GET_ALL_ENABLED:
                     case DBentity.GET_ALL:
@@ -87,6 +115,7 @@ public class DbEntityOperations implements HttpHandler {
                             }
                         }
                     break;
+
                     default:
                     {
                         jsonResponse.setError("Operation not supported.");

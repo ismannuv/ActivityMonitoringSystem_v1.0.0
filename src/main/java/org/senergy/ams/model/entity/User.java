@@ -162,6 +162,15 @@ public class User extends DBentity {
             throw new DBoperationException(ADD,"");
         }
     }
+    public boolean updateDBentity(DBentity entity) throws DBoperationException {
+        entity.sessionId=this.sessionId;
+        if (entity.update(null)) {
+//            AuditTrail.operatorLog(this, entity, DBentity.UPDATE,"");
+            return true;
+        } else {
+            throw new DBoperationException(UPDATE,"");
+        }
+    }
     public static DBentity[] getAllDBentity(DBentity entity, JsonObject filter) throws DBoperationException {
         return entity.getAll(null,filter);
     }
@@ -169,6 +178,32 @@ public class User extends DBentity {
     public static DBentity getDBentity(DBentity entity,JsonObject obj)throws DBoperationException  {
         return entity.get(null,obj);
     }
+    public boolean temporaryDeleteDBentity(DBentity entity, JsonArray idList) throws DBoperationException {
+        entity.sessionId=this.sessionId;
+        JsonObject obj=new JsonObject();
+//        obj.add("locationId",new JsonPrimitive(this.loaction[this.selectedLocation].id));
+        obj.add("idList",idList);
+        if (entity.temporarydelete(null,obj)) {
+//            AuditTrail.operatorLog(this, entity,TEMPORARY_DELETE, idList.toString());
+            return true;
+        } else {
+            throw new DBoperationException(TEMPORARY_DELETE,"");
+        }
+    }
+
+    public boolean restoreDBentity(DBentity entity, JsonArray idList) throws DBoperationException {
+        entity.sessionId=this.sessionId;
+        JsonObject obj=new JsonObject();
+//        obj.add("locationId",new JsonPrimitive(this.loaction[this.selectedLocation].id));
+        obj.add("idList",idList);
+        if (entity.restore(null,obj)) {
+//            AuditTrail.operatorLog(this, entity, RESTORE, idList.toString());
+            return true;
+        } else {
+            throw new DBoperationException(RESTORE,"");
+        }
+    }
+
     @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
         try{

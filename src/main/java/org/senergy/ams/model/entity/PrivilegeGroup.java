@@ -50,8 +50,8 @@ public class PrivilegeGroup extends DBentity {
         super(ENTITY_NANE,disabled);
         this.id=id;
         this.name=name;
-        setOperationPrivilegeBytes(operationPrivilege);
-        setMenuPrivilegeBytes(menuPrivilege);
+        this.setOperationPrivilegeBytes(operationPrivilege);
+        this.setMenuPrivilegeBytes(menuPrivilege);
     }
     public byte[] getOperationPrivilegeBytes() {
         return encryptPrivilege(this.operationPrivilege);
@@ -134,10 +134,11 @@ public class PrivilegeGroup extends DBentity {
         DBaccess2 DBcon = DBconnection.newInstance();
         try{
             if (DBcon.beginTransaction()) {
+                byte[] menuPrivilege = this.getMenuPrivilegeBytes();
                 byte[] operationPrivilege = this.getOperationPrivilegeBytes();
                 boolean retVal = false;
                 try {
-                    retVal = DBcon.preparedQuery("update privilegeGroup set name=?,operationPrivilege=? where id=?", this.name, operationPrivilege, this.id);
+                    retVal = DBcon.preparedQuery("update privilegeGroup set name=?,menuPrivilege=?,operationPrivilege=? where id=?", this.name,menuPrivilege, operationPrivilege, this.id);
                 }
                 finally {
                     DBcon.endTransaction(retVal);
@@ -263,7 +264,7 @@ public class PrivilegeGroup extends DBentity {
             if (DBcon.preparedQuery("select * from privilegeGroup where id=?", this.id)) {
                 DataTable dt = DBcon.getResultSet();
                 if (dt.next()) {
-                    PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"),(byte[]) dt.getObject("operationPrivilege"),(byte[]) dt.getObject("operationPrivilege"),  dt.getInt("disabled"));
+                    PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"),(byte[]) dt.getObject("operationPrivilege"),(byte[]) dt.getObject("menuPrivilege"),  dt.getInt("disabled"));
                     return op;
                 }else
                 {
