@@ -28,6 +28,8 @@ public class User extends DBentity {
     public String validFrom,validUpto;
     public int fp1,fp2;
     private String enrolledFingers;
+    private int authType=1;
+//    {value:'1',label:'Pin + Card'},{value:'2',label:'Card + Finger'},{value:'3',label:'Finger + Pin'}
 
 
     public enum Operation_enum {
@@ -232,7 +234,24 @@ public class User extends DBentity {
 
     @Override
     public boolean update(DBaccess2 conObj) throws DBoperationException {
-        return false;
+        try{
+            this.createDBcon(conObj);
+
+            boolean updateLocUser=false;
+            if(DBcon.preparedQuery("update user set name=?,cardUid=?,emailId=?,mobileNo=?,pin=?,fp1=?,fp2=?,privilegeGroupId=?,validFrom=?,validUpto=? where id=?",this.name,this.cardUID,this.emailId,this.mobileNo,this.pin,this.fp1,this.fp2,this.privilegeGroup.id,this.validFrom,this.validUpto,this.id)){
+
+
+                    return true;
+            }
+            else
+            {
+                throw new DBoperationException(UPDATE, "Failed to update user table");
+            }
+        }
+        catch(SIPLlibException ex)
+        {
+            throw new DBoperationException(UPDATE, ex);
+        }
     }
 
     @Override
@@ -285,6 +304,8 @@ public class User extends DBentity {
                     user.emailId= dt.getString("emailId");
                     user.validFrom=dt.getString("validFrom");
                     user.validUpto=dt.getString("validUpto");
+                    user.fp1=dt.getInt("fp1");
+                    user.fp2=dt.getInt("fp2");
                     JsonObject jsonObject =new JsonObject();
                     jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
 
@@ -384,7 +405,7 @@ public class User extends DBentity {
         } else {
             obj.add("id", new JsonPrimitive(""));
         }
-
+        obj.add("authType",new JsonPrimitive(this.authType));
         if (this.name != null) {
             obj.add("name", new JsonPrimitive(this.name));
         } else {
@@ -402,9 +423,12 @@ public class User extends DBentity {
         }
         if (this.privilegeGroup != null) {
             obj.add("privilegeGroup", this.privilegeGroup.toJson());
+            obj.add("role", new JsonPrimitive(this.privilegeGroup.id));
         } else {
             obj.add("privilegeGroup", new JsonObject());
         }
+
+
         if (this.cardUID != null) {
             obj.add("cardUID", new JsonPrimitive(Helper.byteArrayToHexString(this.cardUID.toByteArray())));
         } else {
@@ -419,6 +443,7 @@ public class User extends DBentity {
         obj.add("fp1", new JsonPrimitive(this.fp1));
 
         obj.add("fp2", new JsonPrimitive(this.fp2));
+        obj.add("authType", new JsonPrimitive(this.authType));
 
         if (this.validFrom != null) {
             obj.add("validFrom", new JsonPrimitive(this.validFrom));
@@ -453,12 +478,51 @@ public class User extends DBentity {
         if (je != null) {
             this.emailId = je.getAsString().equals("") ? null :je.getAsString();
         }
-
+        je = json.get("cardUID");
+        if (je != null) {
+            this.cardUID = BigInteger.valueOf(Long.parseLong(je.getAsString(),16)) ;
+        }
+        je = json.get("pin");
+        if (je != null) {
+            this.pin = je.getAsString();
+        }
         je = json.get("password");
         if (je != null) {
             this.password = je.getAsString();
         }
-
+        je = json.get("authType");
+        if (je != null) {
+            this.authType = je.getAsInt();
+        }
+        je = json.get("validFrom");
+        if (je != null) {
+            this.validFrom = je.getAsString();
+        }
+        je = json.get("validUpto");
+        if (je != null) {
+            this.validUpto = je.getAsString();
+        }
+        je = json.get("fp1");
+        if (je != null) {
+            this.fp1 = je.getAsInt();
+        }
+        je = json.get("fp2");
+        if (je != null) {
+            this.fp2 = je.getAsInt();
+        }
+        je = json.get("mobileNo");
+        if (je != null) {
+            this.mobileNo = je.getAsString().equals("") ? null :je.getAsString();
+        }
+        je = json.get("privilegeGroupId");
+        if (je != null) {
+            this.privilegeGroup=new PrivilegeGroup();
+            this.privilegeGroup.id=je.getAsInt();
+        }
+        je = json.get("authType");
+        if (je != null) {
+            this.authType=je.getAsInt();
+        }
     }
     public String generateMD5(String data) {
         try {
