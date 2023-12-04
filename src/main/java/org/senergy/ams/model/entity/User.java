@@ -16,13 +16,12 @@ import java.security.MessageDigest;
 
 public class User extends DBentity {
     public final static String ENTITY_NANE="User";
-    public static final int DUMMY_USER=0,SUPER_ADMIN = 1,DB_ADMIN=2,ADMIN=3,SUPERVISOR=4,ATTENDANT=5;
+//    public static final int DUMMY_USER=0,SUPER_ADMIN = 1,DB_ADMIN=2,ADMIN=3,SUPERVISOR=4,ATTENDANT=5;
     public String id;
     private String password;
     protected String name;
     private String emailId;
     public String mobileNo;
-    public int type;
     public PrivilegeGroup privilegeGroup;
     public BigInteger cardUID;
     public String pin;
@@ -100,14 +99,13 @@ public class User extends DBentity {
         super(ENTITY_NANE,0);
         this.id = id;
     }
-    public User(String id,String name,BigInteger cardUID,String mobileNo,String emailId,int type, int disabled){
+    public User(String id,String name,BigInteger cardUID,String mobileNo,String emailId, int disabled){
         super(ENTITY_NANE,disabled);
         this.id=id;
         this.name=name;
         this.cardUID = cardUID;
         this.mobileNo=mobileNo;
         this.emailId=emailId;
-        this.type=type;
         this.disabled=disabled;
     }
     public boolean login() throws DBoperationException {
@@ -124,7 +122,6 @@ public class User extends DBentity {
                     this.mobileNo=dt.getString("mobileNo");
                     this.emailId=dt.getString("email");
                     this.disabled=dt.getInt("disabled");
-                    this.type=dt.getInt("type");
                     JsonObject jsonObject =new JsonObject();
                     jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
 
@@ -283,7 +280,11 @@ public class User extends DBentity {
                 DataTable dt=DBcon.getResultSet();
                 if(dt.next())
                 {
-                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
+                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
+                    user.pin= dt.getString("pin");
+                    user.emailId= dt.getString("emailId");
+                    user.validFrom=dt.getString("validFrom");
+                    user.validUpto=dt.getString("validUpto");
                     JsonObject jsonObject =new JsonObject();
                     jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
 
@@ -336,7 +337,7 @@ public class User extends DBentity {
                 int i=0;
                 while(dt.next())
                 {
-                    entity[i]=new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
+                    entity[i]=new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
 
                     i++;
                 }
@@ -383,11 +384,7 @@ public class User extends DBentity {
         } else {
             obj.add("id", new JsonPrimitive(""));
         }
-        if(this.id!=null){
-            obj.add("type",new JsonPrimitive(this.type));
-        }else{
-            obj.add("type",new JsonPrimitive(0));
-        }
+
         if (this.name != null) {
             obj.add("name", new JsonPrimitive(this.name));
         } else {
@@ -488,7 +485,7 @@ public class User extends DBentity {
                 DataTable dt=DBcon.getResultSet();
                 if(dt.next())
                 {
-                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("type"),dt.getInt("disabled"));
+                    User user= new User(dt.getString("id"),dt.getString("name"),dt.getBigInteger("cardUid"),dt.getString("mobileNo"),dt.getString("email"),dt.getInt("disabled"));
                     JsonObject jsonObject =new JsonObject();
                     jsonObject.add("id",new JsonPrimitive(dt.getInt("privilegeGroupId")));
 

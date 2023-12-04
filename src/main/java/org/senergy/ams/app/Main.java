@@ -23,7 +23,7 @@ public class Main {
         System.out.println(secretString2);
 
         User u = new User();
-        System.out.println(u.generateMD5("senergy1136"));
+        System.out.println(u.generateMD5("senergySuperAdmin"));
 
     }
 }

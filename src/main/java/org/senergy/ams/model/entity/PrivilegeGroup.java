@@ -289,6 +289,7 @@ public class PrivilegeGroup extends DBentity {
         this.createDBcon(conObj);
         try{
             int all=filter.get("all").getAsInt();
+            int userType=filter.get("type").getAsInt();
             this.createDBcon(conObj);
             String qry="";
             switch(all)
@@ -300,7 +301,14 @@ public class PrivilegeGroup extends DBentity {
                     qry="select * from privilegegroup where  disabled=1";
                     break;
                 default:
-                    qry="select * from privilegegroup ";
+                    if(userType==0)//SuperAdmin
+                    {
+                        qry="select * from privilegegroup ";
+
+                    }else{
+
+                        qry="select * from privilegegroup pg where pg.id not in (0,1)";
+                    }
                     break;
             }
 //            this.DBcon.dqlQuery("select * from privilegegroup where id!=0");
