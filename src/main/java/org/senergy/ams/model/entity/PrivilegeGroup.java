@@ -295,10 +295,10 @@ public class PrivilegeGroup extends DBentity {
             switch(all)
             {
                 case DBentity.GET_ALL_ENABLED:
-                    qry="select * from privilegegroup where  disabled=0";
+                    qry="select * from privilegegroup pg where pg.id not in (0,1) and disabled=0";
                     break;
                 case DBentity.GET_ALL_DISABLED:
-                    qry="select * from privilegegroup where  disabled=1";
+                    qry="select * from privilegegroup pg where pg.id not in (0,1) and disabled=1";
                     break;
                 default:
                     if(userType==0)//SuperAdmin

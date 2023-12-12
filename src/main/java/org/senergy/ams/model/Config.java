@@ -24,7 +24,7 @@ import java.util.logging.*;
  */
 public class Config {
 
-    public static final String version = "AMS_v1.0.1";
+    public static final String version = "AMS_v1.0.0";
     private static final LogFormatter fileFormatter = new LogFormatter();
     private static final LogFormatter consoleFormatter = new LogFormatter();
     public static DateFormat dateFormat;
