@@ -1,10 +1,9 @@
 package org.senergy.ams.model.entity;
 
 import SIPLlib.DBaccess2;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
@@ -102,7 +101,7 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public boolean updateParam(String id, String paramName, String newVal, JsonObject obj) throws DBoperationException {
+    public boolean updateParam(String id, String paramName, String newVal, JsonNode obj) throws DBoperationException {
         return false;
     }
 
@@ -112,7 +111,7 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public JsonArray permanentDelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public JsonArray permanentDelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         return null;
     }
 
@@ -122,7 +121,7 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public boolean temporarydelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public boolean temporarydelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         return false;
     }
 
@@ -132,28 +131,33 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public boolean restore(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public boolean restore(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         return false;
     }
 
     @Override
-    public DBentity get(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         return null;
     }
 
     @Override
-    public long getCount(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public long getCount(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         return 0;
     }
 
     @Override
-    public DBentity[] getAll(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
-        return new DBentity[0];
+    public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
+        return null;
     }
 
     @Override
-    public DBentity[] export(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
-        return new DBentity[0];
+    public void getAllNew(DBaccess2 conObj, JsonNode filter) {
+
+    }
+
+    @Override
+    public ArrayNode export(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
+        return null;
     }
 
     @Override
@@ -162,8 +166,9 @@ public class Operator extends DBentity {
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject obj = new JsonObject();
+    public JsonNode toJson() {
+        return null;
+        /*JsonObject obj = new JsonObject();
         if (this.id != null) {
             obj.add("id", new JsonPrimitive(this.id));
         } else {
@@ -179,28 +184,28 @@ public class Operator extends DBentity {
         } else {
             obj.add("emailId", new JsonPrimitive(""));
         }
-        return obj;
+        return obj;*/
     }
 
     @Override
-    public void fromJson(JsonObject json) {
-        JsonElement je;
+    public void fromJson(JsonNode json) {
+        JsonNode je;
         je = json.get("id");
         if (je != null) {
-            this.id = je.getAsString();
+            this.id = je.asText();
         }
         je = json.get("name");
         if (je != null) {
-            this.name = je.getAsString();
+            this.name = je.asText();
         }
         je = json.get("emailId");
         if (je != null) {
-            this.emailId = je.getAsString().equals("") ? null :je.getAsString();
+            this.emailId = je.asText().isEmpty() ? null :je.asText();
         }
 
         je = json.get("password");
         if (je != null) {
-            this.password = je.getAsString();
+            this.password = je.asText();
         }
 
     }

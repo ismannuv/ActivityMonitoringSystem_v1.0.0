@@ -8,11 +8,11 @@ package org.senergy.ams.model.entity;
 import SIPLlib.DBaccess2;
 import SIPLlib.DataTable;
 import SIPLlib.Helper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import SIPLlib.SIPLlibException;
-import com.google.gson.JsonElement;
 import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
@@ -45,6 +45,12 @@ public class PrivilegeGroup extends DBentity {
         this.id=id;
         this.name=name;
     }
+    public PrivilegeGroup(int id,String name)
+    {
+        super(ENTITY_NANE,0);
+        this.id=id;
+        this.name=name;
+    }
     public PrivilegeGroup(int id,String name,byte[] operationPrivilege,byte[] menuPrivilege,int disabled)
     {
         super(ENTITY_NANE,disabled);
@@ -53,6 +59,7 @@ public class PrivilegeGroup extends DBentity {
         this.setOperationPrivilegeBytes(operationPrivilege);
         this.setMenuPrivilegeBytes(menuPrivilege);
     }
+
     public byte[] getOperationPrivilegeBytes() {
         return encryptPrivilege(this.operationPrivilege);
     }
@@ -153,7 +160,7 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public boolean updateParam(String id, String paramName, String newVal, JsonObject obj) throws DBoperationException {
+    public boolean updateParam(String id, String paramName, String newVal, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -170,52 +177,8 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public JsonArray permanentDelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
-        this.locationId=obj.get("locationId").getAsInt();
-        JsonArray idList=obj.getAsJsonArray("idList");
-        JsonArray deleteList=new JsonArray();
-        JsonArray failList=new JsonArray();
-        JsonArray retArr=new JsonArray();
-        int successCount=0,failCount=0;
-        try{
-            this.createDBcon(conObj);
-            if(DBcon.beginTransaction())
-            {
-                try{
-                    for(int i=0;i<idList.size();i++)
-                    {
-                        int id=idList.get(i).getAsInt();
-                        try{
-                            this.id=id;
-                            this.permanentDelete(DBcon);
-                            successCount++;
-                            deleteList.add(new JsonPrimitive(id));
-                        }
-                        catch(Exception e)
-                        {
-                            failList.add(new JsonPrimitive(id));
-                            retArr.add(new JsonPrimitive(this.entityName+" "+id+":"+e.getLocalizedMessage()));
-                            failCount++;
-                        }
-                    }
-                }
-                finally
-                {
-                    DBcon.endTransaction(true);
-                }
-            }
-            JsonObject counts=new JsonObject();
-            counts.add("deleted", new JsonPrimitive(successCount));
-            counts.add("failed", new JsonPrimitive(failCount));
-            counts.add("deleteList",deleteList);
-            counts.add("failList",failList);
-            retArr.add(counts);
-            return retArr;
-        }
-        catch(SIPLlibException e)
-        {
-            throw new DBoperationException(PERMANENT_DELETE, e);
-        }
+    public JsonArray permanentDelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
@@ -224,8 +187,10 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public boolean temporarydelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
-        try{
+    public boolean temporarydelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        /*try{
 //            this.locationId=obj.get("locationId").getAsInt();
             String idList=obj.get("idList").getAsJsonArray().toString().replace('[', ' ').replace(']', ' ');
             this.createDBcon(conObj);
@@ -234,7 +199,7 @@ public class PrivilegeGroup extends DBentity {
         catch(Exception ex)
         {
             throw new DBoperationException(TEMPORARY_DELETE, ex);
-        }
+        }*/
     }
 
     @Override
@@ -243,8 +208,10 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public boolean restore(DBaccess2 conObj,JsonObject obj) throws DBoperationException {
-        try{
+    public boolean restore(DBaccess2 conObj,JsonNode obj) throws DBoperationException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+        /*try{
 //            this.locationId=obj.get("locationId").getAsInt();
             String idList=obj.get("idList").getAsJsonArray().toString().replace('[', ' ').replace(']', ' ');
             this.createDBcon(conObj);
@@ -253,19 +220,22 @@ public class PrivilegeGroup extends DBentity {
         catch(Exception ex)
         {
             throw new DBoperationException(RESTORE, ex);
-        }
+        }*/
     }
 
     @Override
-    public DBentity get(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
-        this.id=obj.get("id").getAsInt();
+    public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode arrayNode = objectMapper.createArrayNode();
+        this.id=obj.get("id").asInt();
         DBaccess2 DBcon = DBconnection.newInstance();
         try{
             if (DBcon.preparedQuery("select * from privilegeGroup where id=?", this.id)) {
                 DataTable dt = DBcon.getResultSet();
                 if (dt.next()) {
                     PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"),(byte[]) dt.getObject("operationPrivilege"),(byte[]) dt.getObject("menuPrivilege"),  dt.getInt("disabled"));
-                    return op;
+                    arrayNode.add(op.toJson());
+                    return arrayNode;
                 }else
                 {
                     throw  new DBoperationException(GET, "Failed");
@@ -281,15 +251,17 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public long getCount(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public long getCount(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     @Override
-    public DBentity[] getAll(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode arrayNode = objectMapper.createArrayNode();
         this.createDBcon(conObj);
         try{
-            int all=filter.get("all").getAsInt();
-            int userType=filter.get("type").getAsInt();
+            int all=filter.get("all").asInt();
+            int userType=filter.get("type").asInt();
             this.createDBcon(conObj);
             String qry="";
             switch(all)
@@ -316,14 +288,12 @@ public class PrivilegeGroup extends DBentity {
             if(this.DBcon.dqlQuery(qry))
             {
                 DataTable dt=DBcon.getResultSet();
-                PrivilegeGroup[] entity= new PrivilegeGroup[dt.getRowCount()];
-                int i=0;
                 while(dt.next())
                 {
-                    entity[i]=new PrivilegeGroup(dt.getInt("id"),dt.getString("name"),dt.getInt("disabled"));
-                    i++;
+                    PrivilegeGroup privilegeGroup=new PrivilegeGroup(dt.getInt("id"),dt.getString("name"),dt.getInt("disabled"));
+                    arrayNode.add(privilegeGroup.toJson());
                 }
-                return entity;
+                return arrayNode;
             }
             else
             {
@@ -337,7 +307,12 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public DBentity[] export(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public void getAllNew(DBaccess2 conObj, JsonNode filter) {
+
+    }
+
+    @Override
+    public ArrayNode export(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -347,8 +322,9 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject obj = super.toJson();
+    public JsonNode toJson() {
+        return null;
+        /*JsonObject obj = super.toJson();
 
         obj.add("id", new JsonPrimitive(this.id));
         if (this.name != null) {
@@ -374,36 +350,37 @@ public class PrivilegeGroup extends DBentity {
         } else {
             obj.add("operationPrivilege", new JsonArray());
         }
-        return obj;
+        return obj;*/
     }
 
     @Override
-    public void fromJson(JsonObject json) {
-        JsonElement je;
+    public void fromJson(JsonNode json) {
+
+        JsonNode je;
         je = json.get("id");
         if (je != null) {
-            this.id = je.getAsInt();
+            this.id = je.asInt();
         }
         je = json.get("name");
         if (je != null) {
-            this.name = je.getAsString();
+            this.name = je.asText();
         }
         je = json.get("menuPrivilege");
-        if (je != null) {
-            JsonArray ja = je.getAsJsonArray();
-            this.menuPrivilege = new BigInteger[ja.size()];
-            for (int i = 0; i < ja.size(); i++) {
-                this.menuPrivilege[i] = BigInteger.valueOf(Long.parseLong(ja.get(i).getAsString(), 16));
-            }
-        }
-        je = json.get("operationPrivilege");
-        if (je != null) {
-            JsonArray ja = je.getAsJsonArray();
-            this.operationPrivilege = new byte[ja.size()];
-            for (int i = 0; i < ja.size(); i++) {
-                this.operationPrivilege[i] = ja.get(i).getAsByte();
-            }
-        }
+//        if (je != null) {
+//            JsonArray ja = je.getAsJsonArray();
+//            this.menuPrivilege = new BigInteger[ja.size()];
+//            for (int i = 0; i < ja.size(); i++) {
+//                this.menuPrivilege[i] = BigInteger.valueOf(Long.parseLong(ja.get(i).getAsString(), 16));
+//            }
+//        }
+//        je = json.get("operationPrivilege");
+//        if (je != null) {
+//            JsonArray ja = je.getAsJsonArray();
+//            this.operationPrivilege = new byte[ja.size()];
+//            for (int i = 0; i < ja.size(); i++) {
+//                this.operationPrivilege[i] = ja.get(i).getAsByte();
+//            }
+//        }
     }
     @Override
     public String getIdentifier()

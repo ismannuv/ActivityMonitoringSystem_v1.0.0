@@ -5,17 +5,14 @@
  */
 package org.senergy.ams.model.entity;
 
-import SIPLlib.DBaccess;
 import SIPLlib.DBaccess2;
 import SIPLlib.DataTable;
 import SIPLlib.Helper;
 import SIPLlib.SIPLlibException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
-import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
@@ -82,54 +79,56 @@ public class UserBiometric extends DBentity{
         this.data=data;
     }
     
-    @Override
-    public JsonObject miscellaneousOperation(JsonObject obj) throws DBoperationException
-    {
-        JsonObject ret=new JsonObject();
-        JsonObject result=new JsonObject();
-        int operation = obj.get("operation").getAsInt(); 
-        switch(operation)
-        {
-            case MISC_SEARCH:
-            {                
-                try{
-                    result.add("data", search(obj));
-                    result.add("status", new JsonPrimitive(true));
-                }
-                catch(SIPLlibException e)
-                {
-                    
-                }
-            }
-            break;
-        }
-        ret.add("result", result);
-        return ret;
-    }
-    public static JsonArray search(JsonObject obj) throws SIPLlibException
-    {
-        JsonArray arr=new JsonArray();
-        String id=obj.get("id").getAsString();
-        int location=obj.get("locationId").getAsInt();
-        DBaccess2 DBcon= DBconnection.newInstance();
-        if(DBcon.dqlQuery("SELECT u.userId,ul.name,u.`index`,hex(u.data) as 'data' from locationusers lu left join user ul on ul.id=lu.userId left join userbiometrics u ON u.userId=lu.userId where concat(u.userId,'_', u.`type`,'_',u.`index`)='"+id+"' and lu.locationId="+location))
-        {
-            DataTable dt=DBcon.getResultSet();
-            if(dt!=null)
-            {
-                if(dt.next())
-                {             
-                    JsonArray objarr=new JsonArray();           
-                    for(int i=0;i<dt.getColumnCount();i++)
-                    {
-                        objarr.add(new JsonPrimitive(dt.getObject(i)+""));
-                    }
-                    arr.add(objarr);
-                }
-            }            
-        }  
-        return arr;
-    }
+//    @Override
+//    public JsonObject miscellaneousOperation(JsonNode obj) throws DBoperationException
+//    {
+//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//
+//        /*JsonObject ret=new JsonObject();
+//        JsonObject result=new JsonObject();
+//        int operation = obj.get("operation").getAsInt();
+//        switch(operation)
+//        {
+//            case MISC_SEARCH:
+//            {
+//                try{
+//                    result.add("data", search(obj));
+//                    result.add("status", new JsonPrimitive(true));
+//                }
+//                catch(SIPLlibException e)
+//                {
+//
+//                }
+//            }
+//            break;
+//        }
+//        ret.add("result", result);
+//        return ret;*/
+//    }
+//    public static JsonArray search(JsonObject obj) throws SIPLlibException
+//    {
+//        JsonArray arr=new JsonArray();
+//        String id=obj.get("id").getAsString();
+//        int location=obj.get("locationId").getAsInt();
+//        DBaccess2 DBcon= DBconnection.newInstance();
+//        if(DBcon.dqlQuery("SELECT u.userId,ul.name,u.`index`,hex(u.data) as 'data' from locationusers lu left join user ul on ul.id=lu.userId left join userbiometrics u ON u.userId=lu.userId where concat(u.userId,'_', u.`type`,'_',u.`index`)='"+id+"' and lu.locationId="+location))
+//        {
+//            DataTable dt=DBcon.getResultSet();
+//            if(dt!=null)
+//            {
+//                if(dt.next())
+//                {
+//                    JsonArray objarr=new JsonArray();
+//                    for(int i=0;i<dt.getColumnCount();i++)
+//                    {
+//                        objarr.add(new JsonPrimitive(dt.getObject(i)+""));
+//                    }
+//                    arr.add(objarr);
+//                }
+//            }
+//        }
+//        return arr;
+//    }
     public boolean isOldCabinetLocation(int locationId) throws SIPLlibException
     {
         this.createDBcon(DBcon);
@@ -176,7 +175,7 @@ public class UserBiometric extends DBentity{
     }
 
     @Override
-    public boolean updateParam(String id, String paramName, String newVal, JsonObject obj) throws DBoperationException {
+    public boolean updateParam(String id, String paramName, String newVal, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -195,7 +194,7 @@ public class UserBiometric extends DBentity{
     }
 
     @Override
-    public JsonArray permanentDelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public JsonArray permanentDelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -205,7 +204,7 @@ public class UserBiometric extends DBentity{
     }
 
     @Override
-    public boolean temporarydelete(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public boolean temporarydelete(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -215,25 +214,27 @@ public class UserBiometric extends DBentity{
     }
 
     @Override
-    public boolean restore(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public boolean restore(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public DBentity get(DBaccess2 conObj, JsonObject obj) throws DBoperationException {
+    public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public long getCount(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public long getCount(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public DBentity[] getAll(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
+    public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         try {
-            int all = filter.get("all").getAsInt();
-            int location = filter.get("locationId").getAsInt();
+            ObjectMapper objectMapper = new ObjectMapper();
+            ArrayNode arrayNode = objectMapper.createArrayNode();
+            int all = filter.get("all").asInt();
+            int location = filter.get("locationId").asInt();
             this.createDBcon(conObj);
             String qry = "";
             switch (all) {
@@ -243,13 +244,11 @@ public class UserBiometric extends DBentity{
             }
             if (DBcon.dqlQuery(qry)) {
                 DataTable dt = DBcon.getResultSet();
-                UserBiometric[] entity = new UserBiometric[dt.getRowCount()];
-                int i = 0;
                 while (dt.next()) {
-                    entity[i] = new UserBiometric( dt.getString("userId"),dt.getString("userName"),dt.getInt("type"), dt.getInt("index"),(byte[])dt.getObject("data"),dt.getInt("fp1"),dt.getInt("fp2"));     
-                    i++;
+                    UserBiometric userBiometric = new UserBiometric( dt.getString("userId"),dt.getString("userName"),dt.getInt("type"), dt.getInt("index"),(byte[])dt.getObject("data"),dt.getInt("fp1"),dt.getInt("fp2"));
+                    arrayNode.add(userBiometric.toJson());
                 }
-                return entity;
+                return arrayNode;
             } else {
                 throw new DBoperationException(GET_ALL, "Query Failed");
             }
@@ -259,207 +258,52 @@ public class UserBiometric extends DBentity{
     }
 
     @Override
-    public DBentity[] export(DBaccess2 conObj, JsonObject filter) throws DBoperationException {
-        try{
-            int location=filter.get("locationId").getAsInt();
-            String userList="";
-            if(!filter.get("userList").isJsonArray())
-            {
-                userList=filter.get("userList").getAsString();
-            }
-            this.createDBcon(conObj);
-            if(userList.equals("ALL"))
-            {
-                if(DBcon.dqlQuery("SELECT ub.userId,ub.`type`,ub.`index`,u.name AS 'userName',ub.data FROM locationusers lu LEFT JOIN userbiometrics ub ON ub.userId=lu.userId LEFT JOIN user u ON u.id=ub.userId WHERE lu.locationId="+location+" AND ub.userId IS NOT NULL"))
-                {
-                    DataTable dt=DBcon.getResultSet();
-                    UserBiometric[] entity=new UserBiometric[dt.getRowCount()];
-                    int i=0;
-                    while(dt.next())
-                    {
-                        entity[i]= new UserBiometric(dt.getString("userId"),dt.getString("userName"),dt.getInt("type"), dt.getInt("index"),(byte[])dt.getObject("data"));
-                        i++;
-                    }
-                    return entity;
-                }
-                else
-                {
-                    throw  new DBoperationException(EXPORT, "Query Failed");
-                }
-            }else
-            {
-                JsonArray userBioList=filter.get("userList").getAsJsonArray();
-                UserBiometric[] entity=new UserBiometric[userBioList.size()];
-                for(int i=0;i<userBioList.size();i++)
-                {
-                    String currentUserId=userBioList.get(i).getAsJsonObject().get("userId").getAsString();
-                    int currentIndex=userBioList.get(i).getAsJsonObject().get("index").getAsInt();
-                    int currentType=userBioList.get(i).getAsJsonObject().get("type").getAsInt();
-                    if(DBcon.dqlQuery("SELECT ub.userId,ub.`type`,ub.`index`,u.name AS 'userName',ub.data FROM locationusers lu LEFT JOIN userbiometrics ub ON ub.userId=lu.userId LEFT JOIN user u ON u.id=ub.userId WHERE lu.locationId="+location+" AND ub.userId="+currentUserId+" AND ub.index="+currentIndex+" AND ub.type="+currentType))
-                    {
-                        DataTable dt=DBcon.getResultSet();
-                        if(dt.next())
-                        {
-                            entity[i]= new UserBiometric(dt.getString("userId"),dt.getString("userName"),dt.getInt("type"), dt.getInt("index"),(byte[])dt.getObject("data"));
-                            
-                        }
-                        
-                    }else
-                    {
-                        throw  new DBoperationException(EXPORT, "Query Failed");
-                    }
-                }
-                return entity;
-                
-            }
-            
-       }
-       catch(Exception ex)
-       {
-           throw new DBoperationException(EXPORT, ex);
-       }
+    public void getAllNew(DBaccess2 conObj, JsonNode filter) {
+
     }
 
     @Override
-    public JsonArray importCSV(DBaccess2 conObj, JsonArray list) throws DBoperationException {
-        int addCount=0,updateCount=0,failCount=0;
-        String status="";
-        JsonArray updateList=new JsonArray();
-        JsonArray addList=new JsonArray();  
-        JsonArray failList=new JsonArray();
-        JsonArray retArr=new JsonArray();      
-        UserBiometric obj;
-        
-        this.createDBcon(conObj);
-        long DBcount=-1;
-//        return retArr;
-        try{
-            if(DBcon.beginTransaction())
-            {
-                try{
-                    for(int i=0;i<list.size();i++)
-                    {
-                        obj=new UserBiometric();
-                        try{
-                            obj.fromJson(list.get(i).getAsJsonObject());
-//                            if(DBcount==-1)
-//                            {
-//                                DBcount=this.getCount(conObj, Json.getAsObject("{locationId:0}"));
-//                            }
-                            status="";
-                            boolean exist=false;
-                            if(DBcon.dqlQuery("select id from user where id='"+obj.userId+"'"))
-                            {
-                                DataTable dt=DBcon.getResultSet();
-                                if(dt.next())
-                                {
-                                    exist=true;
-                                }
-                            }
-                            if(exist)
-                            {
-                                if(DBcon.dqlQuery("SELECT * FROM userbiometrics ub WHERE ub.userId='"+obj.userId+"' AND ub.`type`=1 AND ub.`index`="+obj.index))
-                                {
-                                    DataTable dt=DBcon.getResultSet();
-                                    if(dt.getRowCount()==0)
-                                    {
-                                        //add FP
-                                        if(obj.add(null))
-                                        {
-                                            addList.add(new JsonPrimitive(obj.userId));
-                                            addCount++;
-                                            DBcount++;
-                                        }
-                                        else
-                                        {
-                                            failList.add(new JsonPrimitive(obj.userId));
-                                            failCount++;                            
-                                            status="Failed to add";
-                                        }
-                                        
-                                    }
-                                    else
-                                    {
-                                        //update FP
-                                        if(obj.update(DBcon))
-                                        {
-                                            updateList.add(new JsonPrimitive(obj.userId));
-                                            updateCount++;
-                                        }
-                                        else
-                                        {
-                                            failList.add(new JsonPrimitive(obj.userId));
-                                            failCount++;
-                                            status="Failed to update";
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                //user not found
-                                failList.add(new JsonPrimitive(obj.userId));
-                                failCount++;
-                                status="User Not Found!";
-                            }
-                        }
-                        catch(Exception e)
-                        {
-                            failList.add(new JsonPrimitive(obj.userId));
-                            failCount++;
-                            status=e.getMessage();
-                        }
-                        retArr.add(new JsonPrimitive(status));
-                    }
-                }
-                finally{
-                    DBcon.endTransaction(true);
-                }
-            }           
-            JsonObject counts=new JsonObject();
-            counts.add("added", new JsonPrimitive(addCount));
-            counts.add("updated", new JsonPrimitive(updateCount));
-            counts.add("failed", new JsonPrimitive(failCount));
-            counts.add("addList",addList);
-            counts.add("updateList",updateList);
-            counts.add("failList",failList);
-            retArr.add(counts);
-            return retArr; 
-        }
-        catch(SIPLlibException e)
-        {
-            throw new DBoperationException(IMPORT, e);
-        }
+    public ArrayNode export(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
     }
 
     @Override
-    public void fromJson(JsonObject json) {
-        JsonElement je;
+    public JsonArray importCSV(DBaccess2 conObj, JsonArray arr) throws DBoperationException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+
+    }
+
+
+    @Override
+    public void fromJson(JsonNode json) {
+        JsonNode je;
         je = json.get("userId");
         if (je != null) {
-            this.userId = je.getAsString();
+            this.userId = je.asText();
         }
         je=json.get("type");
         if(je!=null){
-        this.type=je.getAsInt();
+        this.type=je.asInt();
         }else{
             this.type=1;
         }
         je=json.get("index");
         if(je!=null){
-        this.index=je.getAsInt();
+        this.index=je.asInt();
         }else{
             this.index=1;
         }
         je=json.get("data");
         if(je!=null)
         {
-            this.data=Helper.hexStringToByteArray(je.getAsString());
+            this.data=Helper.hexStringToByteArray(je.asText());
         }else{this.data=Helper.hexStringToByteArray(Integer.toString(0));}
     }
     @Override
-    public JsonObject toJson() {
-        JsonObject obj = super.toJson();
+    public JsonNode toJson() {
+        return null;
+        /*JsonObject obj = super.toJson();
         obj.add("userId", new JsonPrimitive(this.userId));
         if(this.userName!=null)
         {
@@ -476,7 +320,7 @@ public class UserBiometric extends DBentity{
         obj.add("fp1", new JsonPrimitive(this.fp1));
         
         obj.add("fp2", new JsonPrimitive(this.fp2));
-        return obj;
+        return obj;*/
     }
 
     /*public static void moduleErase(DBaccess2 DBcon,long sessionId) throws SIPLlibException

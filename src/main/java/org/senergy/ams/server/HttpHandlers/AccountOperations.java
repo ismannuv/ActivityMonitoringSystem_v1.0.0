@@ -3,6 +3,7 @@ package org.senergy.ams.server.HttpHandlers;
 import SIPLlib.Helper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.Headers;
@@ -10,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.Json;
+import org.senergy.ams.model.JsonJackson;
 import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.JwtHandler;
 
@@ -45,8 +47,8 @@ public class AccountOperations implements HttpHandler {
             InputStream requestBody = exchange.getRequestBody();
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode jsonNode = objectMapper.readTree(requestBody);
-            Json jsonRequest = new Json(jsonNode.toString());
-            Json jsonResponse = new Json(jsonRequest.operation);
+            JsonJackson jsonRequest = new JsonJackson(jsonNode.toString());
+            JsonJackson jsonResponse = new JsonJackson(jsonRequest.operation);
             JwtHandler jwtHandler = new JwtHandler();
             //if user is login
             if(jsonRequest.operation != User.Operation_enum.LOGIN.getValue())
@@ -59,15 +61,17 @@ public class AccountOperations implements HttpHandler {
                     case LOGIN:
                     {
                         User newOp = new User();
-                        newOp.fromJson(jsonRequest.data.get(0).getAsJsonObject());
+                        newOp.fromJson(jsonRequest.data.get(0));
                         if (newOp.login()) {
                             jsonResponse.data.add(newOp.toJson());
                             jsonResponse.status = true;
 
-                            String jwt = jwtHandler.createJwtToken(newOp.toJson().toString(), Config.JWT_KEY);
+                            String jwt = jwtHandler.createJwtToken(newOp.privilegeGroup.id==1,newOp.toJson().toString(), Config.JWT_KEY);
 
-                            JsonObject obj=jsonResponse.data.get(0).getAsJsonObject();
-                            obj.add("jwt",new JsonPrimitive(jwt));
+                            ObjectNode obj = (ObjectNode) jsonResponse.data.get(0);
+                            obj.put("jwt",jwt);
+//                            JsonObject obj=jsonResponse.data.get(0).getAsJsonObject();
+//                            obj.add("jwt",new JsonPrimitive(jwt));
                             jsonResponse.data.remove(0);
                             jsonResponse.data.add(obj);
                             headers.add("Set-Cookie", "jwt=" + jwt );

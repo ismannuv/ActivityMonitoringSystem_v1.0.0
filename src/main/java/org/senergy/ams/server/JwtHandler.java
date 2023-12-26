@@ -11,6 +11,7 @@ import io.jsonwebtoken.Jwts;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBoperationException;
 import org.senergy.ams.model.Json;
+import org.senergy.ams.model.JsonJackson;
 import org.senergy.ams.model.entity.User;
 
 import javax.crypto.SecretKey;
@@ -27,24 +28,32 @@ public class JwtHandler {
     public void JwtHandler(){
         this.webOperator=null;
     }
-    public String createJwtToken(String userObj, Key key)
+    public String createJwtToken(boolean isDummyUser,String userObj, Key key)
     {
         String jwt=null;
 
         Calendar calendar=Calendar.getInstance();
         calendar.add(Calendar.MINUTE,15);
         // Build the JWT token
-         jwt = Jwts.builder()
-                .signWith(key)
-                .expiration(calendar.getTime())
-                .claim("user",userObj)
-                .compact();
+        if(isDummyUser){//no expiry
+            jwt = Jwts.builder()
+                    .signWith(key)
+                    .claim("user",userObj)
+                    .compact();
+        }else {
+            jwt = Jwts.builder()
+                    .signWith(key)
+                    .expiration(calendar.getTime())
+                    .claim("user",userObj)
+                    .compact();
+        }
+
         return jwt;
     }
     private boolean validateJwtToken(String jwt,SecretKey key) throws DBoperationException, JsonProcessingException {
         boolean status=false;
         Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(jwt).getPayload();
-        if(claims.getExpiration().before(new Date())){
+        if(claims.getExpiration()!=null && claims.getExpiration().before(new Date())){
             System.out.println("jwt expired :"+jwt);
             System.out.println("jwt expired date :"+claims.getExpiration());
             //jwt expired
@@ -58,9 +67,10 @@ public class JwtHandler {
                 //check here user is exist or not
                 System.out.println("jwt user :"+userObj);
                 webOperator= new User();
+
                 JsonObject jsonObject =new JsonObject();
                 jsonObject.add("id",new JsonPrimitive(userObj.get("id").asText()));
-                webOperator= (User) webOperator.get(null,jsonObject);
+                webOperator=  objectMapper.treeToValue(webOperator.get(null,userObj), User.class);
 
                 status=true;
 
@@ -68,7 +78,7 @@ public class JwtHandler {
         }
         return status;
     }
-    public boolean isValidUser(HttpExchange exchange, Json jsonResponse) throws IOException {
+    public boolean isValidUser(HttpExchange exchange, JsonJackson jsonResponse) throws IOException {
         boolean status=false;
         String cause="";
         try {

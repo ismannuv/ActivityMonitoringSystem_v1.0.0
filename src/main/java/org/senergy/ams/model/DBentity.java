@@ -6,10 +6,9 @@
 package org.senergy.ams.model;
 
 import SIPLlib.DBaccess2;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 
 /**
  *
@@ -64,25 +63,26 @@ public abstract class DBentity implements JsonEntity{
     abstract public String getIdentifier();
     abstract public boolean add(DBaccess2 conObj) throws DBoperationException;
     abstract public boolean update(DBaccess2 conObj) throws DBoperationException;
-    abstract public boolean updateParam(String id,String paramName,String newVal,JsonObject obj) throws DBoperationException;
+    abstract public boolean updateParam(String id,String paramName,String newVal,JsonNode obj) throws DBoperationException;
     abstract public boolean permanentDelete(DBaccess2 conObj) throws DBoperationException;
-    abstract public JsonArray permanentDelete(DBaccess2 conObj,JsonObject obj) throws DBoperationException;
+    abstract public JsonArray permanentDelete(DBaccess2 conObj,JsonNode obj) throws DBoperationException;
     abstract public boolean temporarydelete(DBaccess2 conObj) throws DBoperationException;
-    abstract public boolean temporarydelete(DBaccess2 conObj,JsonObject obj) throws DBoperationException;
+    abstract public boolean temporarydelete(DBaccess2 conObj,JsonNode obj) throws DBoperationException;
     abstract public boolean restore(DBaccess2 conObj) throws DBoperationException;
-    abstract public boolean restore(DBaccess2 conObj,JsonObject obj) throws DBoperationException;
-    abstract public DBentity get(DBaccess2 conObj,JsonObject obj) throws DBoperationException;
-    abstract public long getCount(DBaccess2 conObj,JsonObject filter) throws DBoperationException; //filter:{all:7/8/9}
-    abstract public DBentity[] getAll(DBaccess2 conObj,JsonObject filter) throws DBoperationException; //filter:{all:7/8/9}
-    abstract public DBentity[] export(DBaccess2 conObj,JsonObject filter) throws DBoperationException; //filter:{all:7/8/9}
+    abstract public boolean restore(DBaccess2 conObj,JsonNode obj) throws DBoperationException;
+    abstract public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException;
+    abstract public long getCount(DBaccess2 conObj,JsonNode filter) throws DBoperationException; //filter:{all:7/8/9}
+    abstract public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException; //filter:{all:7/8/9}
+    abstract public void getAllNew(DBaccess2 conObj, JsonNode filter); //filter:{all:7/8/9}
+    abstract public ArrayNode export(DBaccess2 conObj,JsonNode filter) throws DBoperationException; //filter:{all:7/8/9}
     abstract public JsonArray importCSV(DBaccess2 conObj,JsonArray arr) throws DBoperationException;
    
-    public JsonObject miscellaneousOperation(JsonObject obj) throws DBoperationException
-    {
-        JsonObject ret=new JsonObject();
-        ret.add("result", new JsonObject());
-        return ret;
-    }
+//    public JsonNode miscellaneousOperation(JsonNode obj) throws DBoperationException
+//    {
+//        JsonNode ret=new JsonNode();
+//        ret.add("result", new JsonNode());
+//        return ret;
+//    }
             
     public static String getOperationName(int operation)
     {
@@ -116,10 +116,10 @@ public abstract class DBentity implements JsonEntity{
                 return "Unknown Operation "+operation;                
         }
     }
-    @Override
-    public JsonObject toJson() {
-        JsonObject obj = new JsonObject();
+    /*@Override
+    public String toJson() {
+        JsonNode obj = new JsonNode();
         obj.add("disabled", new JsonPrimitive(this.disabled));
         return obj;
-    }
+    }*/
 }
