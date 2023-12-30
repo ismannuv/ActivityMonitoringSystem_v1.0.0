@@ -92,7 +92,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>libs/</classpathPrefix>
-                            <mainClass>org.senergy.ams.app.Test</mainClass>
+                            <mainClass>org.senergy.ams.app.AMS</mainClass>
                         </manifest>
                         <manifestEntries>
                             <url>${project.url}</url>

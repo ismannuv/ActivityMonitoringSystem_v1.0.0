@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.senergy.ams.app.Main;
+import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
@@ -23,8 +23,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.LinkedList;
-import java.util.Queue;
 
 public class User extends DBentity {
     public final static String ENTITY_NANE = "User";
@@ -403,7 +401,7 @@ public class User extends DBentity {
     }
     public void getAllNew2(DBaccess2 conObj, JsonNode filter)  {
         this.createDBcon(conObj);
-        Main.liveData.startFetchingData();
+        AMS.liveData.startFetchingData();
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -461,13 +459,13 @@ public class User extends DBentity {
                             arrayNode.add(objectNode);
                             cntr++;
                             if(cntr>=total){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
                             if(arrayNode.size()>=size){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
 //                            Main.liveData.getAllQueueData.add(user.toJson());
@@ -477,15 +475,15 @@ public class User extends DBentity {
 
 //                        return arrayNode;
                     } else {
-                        Main.liveData.setError("Query Failed");
+                        AMS.liveData.setError("Query Failed");
 //                        throw new DBoperationException(GET_ALL, "Query Failed");
                     }
                 } catch (Exception ex) {
-                    Main.liveData.setError(ex);
+                    AMS.liveData.setError(ex);
 //                    throw new DBoperationException(GET_ALL, ex);
                 }
                 finally {
-                    Main.liveData.stopFetchingData();
+                    AMS.liveData.stopFetchingData();
                 }
             }
         });
@@ -494,7 +492,7 @@ public class User extends DBentity {
     }
     public void getAllNew(DBaccess2 conObj, JsonNode filter)  {
         this.createDBcon(conObj);
-        Main.liveData.startFetchingData();
+        AMS.liveData.startFetchingData();
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -553,13 +551,13 @@ public class User extends DBentity {
                             arrayNode.add(user.toJson().deepCopy());
                             cntr++;
                             if(cntr>=total){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
                             if(arrayNode.size()>=size){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
 //                            Main.liveData.getAllQueueData.add(user.toJson());
@@ -569,15 +567,15 @@ public class User extends DBentity {
 
 //                        return arrayNode;
                     } else {
-                        Main.liveData.setError("Query Failed");
+                        AMS.liveData.setError("Query Failed");
 //                        throw new DBoperationException(GET_ALL, "Query Failed");
                     }
                 } catch (Exception ex) {
-                    Main.liveData.setError(ex);
+                    AMS.liveData.setError(ex);
 //                    throw new DBoperationException(GET_ALL, ex);
                 }
                 finally {
-                    Main.liveData.stopFetchingData();
+                    AMS.liveData.stopFetchingData();
                 }
             }
         });
@@ -586,7 +584,7 @@ public class User extends DBentity {
     }
     public void getAllNew1(DBaccess2 conObj, JsonNode filter)  {
         this.createDBcon(conObj);
-        Main.liveData.startFetchingData();
+        AMS.liveData.startFetchingData();
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -651,13 +649,13 @@ public class User extends DBentity {
                             arrayNode.add(user.toJson().deepCopy());
                             cntr++;
                             if(cntr>=total){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
                             if(arrayNode.size()>=size){
-                                Main.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                Main.liveData.startSending=true;
+                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
+                                AMS.liveData.startSending=true;
                                 arrayNode.removeAll();
                             }
 
@@ -685,11 +683,11 @@ public class User extends DBentity {
 //                        throw new DBoperationException(GET_ALL, "Query Failed");
                     }*/
                 } catch (Exception ex) {
-                    Main.liveData.setError(ex);
+                    AMS.liveData.setError(ex);
 //                    throw new DBoperationException(GET_ALL, ex);
                 }
                 finally {
-                    Main.liveData.stopFetchingData();
+                    AMS.liveData.stopFetchingData();
                 }
             }
         });

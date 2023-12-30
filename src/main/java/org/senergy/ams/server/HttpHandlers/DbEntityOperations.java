@@ -6,12 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.senergy.ams.app.Main;
+import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBentity;
-import org.senergy.ams.model.Json;
 import org.senergy.ams.model.JsonJackson;
-import org.senergy.ams.model.entity.PrivilegeGroup;
 import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.JwtHandler;
 
@@ -131,12 +129,12 @@ public class DbEntityOperations implements HttpHandler {
                             boolean first=true;
 
                             while ( true ){
-                                if(Main.liveData.startSending &&  !Main.liveData.getAllQueueDataArrayNode.isEmpty() ){
+                                if(AMS.liveData.startSending &&  !AMS.liveData.getAllQueueDataArrayNode.isEmpty() ){
 //                                    jsonResponse.data = objectMapper.createArrayNode().add(Main.liveData.getAllQueueData.remove());
 
                                     if(first){
 
-                                        JsonNode res = Main.liveData.getAllQueueDataArrayNode.poll();
+                                        JsonNode res = AMS.liveData.getAllQueueDataArrayNode.poll();
                                         if(res!=null){
                                             first=false;
                                             os.write(res.toString().replaceFirst("\\[","").replaceFirst("]","").getBytes());
@@ -147,7 +145,7 @@ public class DbEntityOperations implements HttpHandler {
 
 
                                     }else {
-                                        JsonNode res = Main.liveData.getAllQueueDataArrayNode.poll();
+                                        JsonNode res = AMS.liveData.getAllQueueDataArrayNode.poll();
                                         if(res!=null){
                                             os.write(",".getBytes());
                                             os.flush();
@@ -162,7 +160,7 @@ public class DbEntityOperations implements HttpHandler {
                                     }
 
 
-                                }else if(!Main.liveData.fetchingLargeData){
+                                }else if(!AMS.liveData.fetchingLargeData){
                                     break;
                                 }
 
@@ -176,8 +174,8 @@ public class DbEntityOperations implements HttpHandler {
                         }finally {
 //                            os.write("]}".getBytes());
 //                            os.close();
-                            if(!Main.liveData.getError().isEmpty()){
-                                jsonResponse.setError(Main.liveData.getError());
+                            if(!AMS.liveData.getError().isEmpty()){
+                                jsonResponse.setError(AMS.liveData.getError());
                             }else{
                                 jsonResponse.status = true;
 

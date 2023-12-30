@@ -65,6 +65,18 @@ public class Config {
     public static SecretKey JWT_KEY;
     public static String JWT_KEY_STRING;
 
+
+    /************ Hw Configs  **************/
+
+    public static String LANinterface;
+    public static String serialPort;
+    public static int serialBaud;
+    public static int respTimeout=5000;
+    public static boolean serverTimeSync=true;
+
+
+
+
     public void init() {
         Properties prop = new Properties();
         try {
@@ -81,6 +93,8 @@ public class Config {
                     throw new FileNotFoundException("property file not found");
                 }
             }
+
+
             JWT_KEY = Jwts.SIG.HS256.key().build();
             JWT_KEY_STRING=Encoders.BASE64.encode(JWT_KEY.getEncoded());
             DBip = prop.getProperty("DBip");
@@ -116,6 +130,16 @@ public class Config {
             logFileCount = Integer.parseInt(prop.getProperty("logFileCount", "1024"));
             logLevel = prop.getProperty("logLevel", "CONFIG");
             logConfig = Integer.parseInt(prop.getProperty("logConfig", "0"));
+
+            /*********** HW config*****************/
+            serialPort = prop.getProperty("serialPort","");
+            serialBaud = Integer.parseInt(prop.getProperty("serialBaud","115200"));
+            LANinterface = prop.getProperty("LANinterface","eth0");
+            respTimeout = Integer.parseInt(prop.getProperty("respTimeout","5000"));
+            serverTimeSync = Boolean.parseBoolean(prop.getProperty("serverTimeSync","false"));
+
+
+
             initLogger(version);
         } catch (Exception ex) {
             ex.printStackTrace();
