@@ -11,6 +11,8 @@ import org.senergy.ams.sync.SyncOperations;
 import org.senergy.ams.sync.SyncPacket;
 import org.senergy.ams.utils.Global;
 
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 public class SerialConnection extends SerialCommunication implements SerialPortEventListener {
@@ -171,21 +173,28 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     }
     public String getCabinetDatetime()
     {
-        String datetime=null;
-        SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
+        byte[] data = new byte[20];
+        data[0]=0x11;
+        Helper.setString(data,1,"Senergy");
+        SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, data);
         byte[] resp=exchange(SyncPacket.encode(tx), Config.respTimeout);
         if(resp!=null)
         {
             SyncPacket rx=SyncPacket.decode(resp);
             if(rx!=null)
             {
-                int dd=Helper.getUint8(rx.data, 0);
-                int MM=Helper.getUint8(rx.data, 1);
-                int yy=Helper.getUint8(rx.data, 2)+2000;
-                int HH=Helper.getUint8(rx.data, 3);
-                int mm=Helper.getUint8(rx.data, 4);
-                int ss=Helper.getUint8(rx.data, 5);
-                datetime=yy+"-"+String.format("%02d", MM)+"-"+String.format("%02d", dd)+" "+String.format("%02d", HH)+":"+String.format("%02d", mm)+":"+String.format("%02d", ss);
+                long epoch =Helper.getUint32_BE(rx.data,0);
+                Date date=new Date(epoch*1000);
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+                // Format the current date and time using the defined formatter
+                String formattedDateTime = simpleDateFormat.format(date);
+
+                if((Config.logConfig&111)>0){
+
+                    Config.logger.info("datetime :"+formattedDateTime);
+                }
+                return formattedDateTime;
             }
             else
             {
@@ -196,20 +205,26 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
         {
             Config.logger.severe("No Response from cabinet for get Datetime command");
         }
-        return datetime;
+        return null;
     }
     public boolean setServerDatetime(String datetime)
     {
         String serverDt=Config.dateFormat.format(new Date());
+
         Config.logger.info("server datetime : "+serverDt);
         Config.logger.info("changing datetime to : "+datetime);
+
         String[] cmd=new String[]{"date","-s",datetime};
         Global.executeShellCommand(cmd);
+
         datetime=datetime.substring(0, 16);
+
         serverDt=Config.dateFormat.format(new Date());
         Config.logger.info("server datetime after change: "+serverDt);
+
         serverDt=serverDt.substring(0,16);
         Config.logger.info("comparing datetime after change : "+datetime+"=="+serverDt);
+
         if(datetime.equals(serverDt))
         {
             return true;
@@ -303,7 +318,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     }
 
                 }while(!exit);
-                if((Config.logConfig&2)>0)
+                if((Config.logConfig&111)>0)
                 {
                     Config.logger.info("Cammand Tx : "+tx.length);
                     Config.logger.info(Helper.byteArrayToHexString(tx));
@@ -313,7 +328,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                 {
                     byte[] respPacket=new byte[this.reqLen];
                     System.arraycopy(this.rxBuff, 0, respPacket, 0, this.reqLen);
-                    if((Config.logConfig&2)>0)
+                    if((Config.logConfig&111)>0)
                     {
                         Config.logger.info("####  res :"+Helper.byteArrayToHexString(respPacket));
                         Config.logger.info("### seq :"+Helper.getUint16_LE(respPacket,1));

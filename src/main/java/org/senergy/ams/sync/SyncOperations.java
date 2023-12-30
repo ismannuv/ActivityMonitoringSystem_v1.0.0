@@ -5,6 +5,9 @@
  */
 package org.senergy.ams.sync;
 
+import SIPLlib.Helper;
+
+import java.math.BigInteger;
 
 /**
  *
@@ -37,10 +40,39 @@ public class SyncOperations  {
         }
         return reply;
     }
-    private static SyncPacket processServerPacket(SyncPacket pkt) 
+    private static SyncPacket processServerPacket(SyncPacket pkt)
     {
-        switch (pkt.type)
+        switch (pkt.data[0])
         {
+            case (byte) (SyncCommands.AUTHENTICATION & 0xFF):
+            {
+                int authType= Helper.getUint8(pkt.data,1);
+                switch (authType){
+                    case 1://card
+                    {
+                        BigInteger cardUid=Helper.getUint64_BE(pkt.data, 2);
+
+                    }
+                    break;
+                    case 2://FP
+                    {
+                        long userId=Helper.getUint32_BE(pkt.data, 2);
+                    }
+                    break;
+                    case 3://PINs
+                    {
+                        long pin=Helper.getUint32_BE(pkt.data, 2);
+                    }
+                    break;
+                }
+            }
+            break;
+            case (byte) (SyncCommands.EVENTS & 0xFF):
+            {
+
+            }
+            break;
+
         }
         return pkt;
     }

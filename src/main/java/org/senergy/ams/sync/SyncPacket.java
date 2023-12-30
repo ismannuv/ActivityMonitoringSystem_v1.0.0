@@ -32,7 +32,9 @@ public class SyncPacket
         if(request!=null)
         {
 //            System.out.println("Rx:"+Helper.byteArrayToHexString(request));
-            Config.logger.finer("Rx:"+Helper.byteArrayToHexString(request));
+            if((Config.logConfig&2) > 0){
+                Config.logger.info("Rx:"+Helper.byteArrayToHexString(request));
+            }
             if(request.length>SyncPacket.HEADER_SIZE)
             {
                 int seqNo= (request[2] & 0xFF) << 8 | (request[1] & 0xFF);
@@ -41,7 +43,7 @@ public class SyncPacket
                 {
                     if((request.length-(SyncPacket.HEADER_SIZE+SyncPacket.CRC_SIZE)) == size)
                     {
-                        if(Helper.checkCRC(request, 0, request.length))
+                        if(!Helper.checkCRC(request, 0, request.length))
                         {
                             byte[] data=new byte[size];
                             System.arraycopy(request, SyncPacket.HEADER_SIZE, data, 0, size);
