@@ -8,11 +8,12 @@ package org.senergy.ams.model.entity;
 import SIPLlib.DBaccess2;
 import SIPLlib.DataTable;
 import SIPLlib.Helper;
+import SIPLlib.SIPLlibException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
-import SIPLlib.SIPLlibException;
 import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
@@ -20,42 +21,40 @@ import org.senergy.ams.model.DBoperationException;
 import java.math.BigInteger;
 
 /**
- *
  * @author admin
  */
 public class PrivilegeGroup extends DBentity {
-    public final static String ENTITY_NANE="PrivilegeGroup";
-    public final static int PRIVILEGE_BYTE=2;
+    public final static String ENTITY_NANE = "PrivilegeGroup";
+    public final static int PRIVILEGE_BYTE = 2;
     int locationId;
 
-    public PrivilegeGroup()
-    {
+    public PrivilegeGroup() {
 
-        super(ENTITY_NANE,0);
+        super(ENTITY_NANE, 0);
     }
 
     public int id;
     public String name;
     public byte[] operationPrivilege;
-    protected BigInteger[] menuPrivilege;
+    public BigInteger[] menuPrivilege;
+    public ObjectNode objectNode;
 
-    public PrivilegeGroup(int id,String name,int disabled)
-    {
-        super(ENTITY_NANE,disabled);
-        this.id=id;
-        this.name=name;
+    public PrivilegeGroup(int id, String name, int disabled) {
+        super(ENTITY_NANE, disabled);
+        this.id = id;
+        this.name = name;
     }
-    public PrivilegeGroup(int id,String name)
-    {
-        super(ENTITY_NANE,0);
-        this.id=id;
-        this.name=name;
+
+    public PrivilegeGroup(int id, String name) {
+        super(ENTITY_NANE, 0);
+        this.id = id;
+        this.name = name;
     }
-    public PrivilegeGroup(int id,String name,byte[] operationPrivilege,byte[] menuPrivilege,int disabled)
-    {
-        super(ENTITY_NANE,disabled);
-        this.id=id;
-        this.name=name;
+
+    public PrivilegeGroup(int id, String name, byte[] operationPrivilege, byte[] menuPrivilege, int disabled) {
+        super(ENTITY_NANE, disabled);
+        this.id = id;
+        this.name = name;
         this.setOperationPrivilegeBytes(operationPrivilege);
         this.setMenuPrivilegeBytes(menuPrivilege);
     }
@@ -63,6 +62,7 @@ public class PrivilegeGroup extends DBentity {
     public byte[] getOperationPrivilegeBytes() {
         return encryptPrivilege(this.operationPrivilege);
     }
+
     public byte[] getMenuPrivilegeBytes() {
         byte[] data = null;
         if (this.menuPrivilege != null) {
@@ -85,6 +85,7 @@ public class PrivilegeGroup extends DBentity {
         }
         return data;
     }
+
     public void setOperationPrivilegeBytes(byte[] data) {
         data = decryptPrivilege(data);
         if (data != null) {
@@ -93,6 +94,7 @@ public class PrivilegeGroup extends DBentity {
             this.operationPrivilege = new byte[0];
         }
     }
+
     public void setMenuPrivilegeBytes(byte[] data) {
         data = decryptPrivilege(data);
         if (data != null) {
@@ -104,6 +106,7 @@ public class PrivilegeGroup extends DBentity {
             this.menuPrivilege = new BigInteger[0];
         }
     }
+
     private byte[] encryptPrivilege(byte[] data) {
         if (data != null) {
             byte[] edata = new byte[data.length + 2];
@@ -116,6 +119,7 @@ public class PrivilegeGroup extends DBentity {
         }
         return null;
     }
+
     private byte[] decryptPrivilege(byte[] data) {
         if (Helper.checkCRC(data, 0, data.length)) {
             byte[] edata = new byte[data.length - 2];
@@ -128,10 +132,9 @@ public class PrivilegeGroup extends DBentity {
     @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
         DBaccess2 DBcon = DBconnection.newInstance();
-        try{
-            return DBcon.preparedQuery("insert into privilegeGroup(id,name,menuPrivilege,operationPrivilege,reportPrivilege) values(?,?,?,?,?)", this.id,this.name, this.getMenuPrivilegeBytes(), this.getOperationPrivilegeBytes(), "");
-        }
-        catch(Exception e){
+        try {
+            return DBcon.preparedQuery("insert into privilegeGroup(id,name,menuPrivilege,operationPrivilege,reportPrivilege) values(?,?,?,?,?)", this.id, this.name, this.getMenuPrivilegeBytes(), this.getOperationPrivilegeBytes(), "");
+        } catch (Exception e) {
             throw new RuntimeException("");
         }
     }
@@ -139,21 +142,19 @@ public class PrivilegeGroup extends DBentity {
     @Override
     public boolean update(DBaccess2 conObj) throws DBoperationException {
         DBaccess2 DBcon = DBconnection.newInstance();
-        try{
+        try {
             if (DBcon.beginTransaction()) {
                 byte[] menuPrivilege = this.getMenuPrivilegeBytes();
                 byte[] operationPrivilege = this.getOperationPrivilegeBytes();
                 boolean retVal = false;
                 try {
-                    retVal = DBcon.preparedQuery("update privilegeGroup set name=?,menuPrivilege=?,operationPrivilege=? where id=?", this.name,menuPrivilege, operationPrivilege, this.id);
-                }
-                finally {
+                    retVal = DBcon.preparedQuery("update privilegeGroup set name=?,menuPrivilege=?,operationPrivilege=? where id=?", this.name, menuPrivilege, operationPrivilege, this.id);
+                } finally {
                     DBcon.endTransaction(retVal);
                     return true;
                 }
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException();
         }
         return false;
@@ -166,12 +167,10 @@ public class PrivilegeGroup extends DBentity {
 
     @Override
     public boolean permanentDelete(DBaccess2 conObj) throws DBoperationException {
-        try{
-            boolean retVal = DBcon.dmlQuery("delete from privilegegroup where id="+this.id );
+        try {
+            boolean retVal = DBcon.dmlQuery("delete from privilegegroup where id=" + this.id);
             return retVal;
-        }
-        catch(SIPLlibException ex)
-        {
+        } catch (SIPLlibException ex) {
             throw new DBoperationException(PERMANENT_DELETE, ex);
         }
     }
@@ -208,7 +207,7 @@ public class PrivilegeGroup extends DBentity {
     }
 
     @Override
-    public boolean restore(DBaccess2 conObj,JsonNode obj) throws DBoperationException {
+    public boolean restore(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 
         /*try{
@@ -227,25 +226,45 @@ public class PrivilegeGroup extends DBentity {
     public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode arrayNode = objectMapper.createArrayNode();
-        this.id=obj.get("id").asInt();
+        this.id = obj.get("id").asInt();
         DBaccess2 DBcon = DBconnection.newInstance();
-        try{
+        try {
             if (DBcon.preparedQuery("select * from privilegeGroup where id=?", this.id)) {
                 DataTable dt = DBcon.getResultSet();
                 if (dt.next()) {
-                    PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"),(byte[]) dt.getObject("operationPrivilege"),(byte[]) dt.getObject("menuPrivilege"),  dt.getInt("disabled"));
+                    PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"), (byte[]) dt.getObject("operationPrivilege"), (byte[]) dt.getObject("menuPrivilege"), dt.getInt("disabled"));
                     arrayNode.add(op.toJson());
                     return arrayNode;
-                }else
-                {
-                    throw  new DBoperationException(GET, "Failed");
+                } else {
+                    throw new DBoperationException(GET, "Failed");
                 }
-            }else
-            {
-                throw  new DBoperationException(GET, "Query Failed");
+            } else {
+                throw new DBoperationException(GET, "Query Failed");
             }
+        } catch (Exception e) {
+            throw new DBoperationException(GET, e);
         }
-        catch(Exception e){
+    }
+
+    public DBentity get1(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        ArrayNode arrayNode = objectMapper.createArrayNode();
+        this.id = obj.get("id").asInt();
+        DBaccess2 DBcon = DBconnection.newInstance();
+        try {
+            if (DBcon.preparedQuery("select * from privilegeGroup where id=?", this.id)) {
+                DataTable dt = DBcon.getResultSet();
+                if (dt.next()) {
+                    PrivilegeGroup op = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"), (byte[]) dt.getObject("operationPrivilege"), (byte[]) dt.getObject("menuPrivilege"), dt.getInt("disabled"));
+//                    arrayNode.add(op.toJson());
+                    return op;
+                } else {
+                    throw new DBoperationException(GET, "Failed");
+                }
+            } else {
+                throw new DBoperationException(GET, "Query Failed");
+            }
+        } catch (Exception e) {
             throw new DBoperationException(GET, e);
         }
     }
@@ -254,54 +273,48 @@ public class PrivilegeGroup extends DBentity {
     public long getCount(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
     @Override
     public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode arrayNode = objectMapper.createArrayNode();
         this.createDBcon(conObj);
-        try{
-            int all=filter.get("all").asInt();
-            int userType=filter.get("type").asInt();
+        try {
+            int all = filter.get("all").asInt();
+            int userType = filter.get("type").asInt();
             this.createDBcon(conObj);
-            String qry="";
-            switch(all)
-            {
+            String qry = "";
+            switch (all) {
                 case DBentity.GET_ALL_ENABLED:
-                    qry="select * from privilegegroup pg where pg.id not in (0,1) and disabled=0";
+                    qry = "select * from privilegegroup pg where pg.id not in (0,1) and disabled=0";
                     break;
                 case DBentity.GET_ALL_DISABLED:
-                    qry="select * from privilegegroup pg where pg.id not in (0,1) and disabled=1";
+                    qry = "select * from privilegegroup pg where pg.id not in (0,1) and disabled=1";
                     break;
                 default:
-                    if(userType==0)//SuperAdmin
+                    if (userType == 0)//SuperAdmin
                     {
-                        qry="select * from privilegegroup ";
+                        qry = "select * from privilegegroup ";
 
-                    }else{
+                    } else {
 
-                        qry="select * from privilegegroup pg where pg.id not in (0,1)";
+                        qry = "select * from privilegegroup pg where pg.id not in (0,1)";
                     }
                     break;
             }
 //            this.DBcon.dqlQuery("select * from privilegegroup where id!=0");
 
-            if(this.DBcon.dqlQuery(qry))
-            {
-                DataTable dt=DBcon.getResultSet();
-                while(dt.next())
-                {
-                    PrivilegeGroup privilegeGroup=new PrivilegeGroup(dt.getInt("id"),dt.getString("name"),dt.getInt("disabled"));
-                    arrayNode.add(privilegeGroup.toJson());
+            if (this.DBcon.dqlQuery(qry)) {
+                DataTable dt = DBcon.getResultSet();
+                while (dt.next()) {
+                    PrivilegeGroup privilegeGroup = new PrivilegeGroup(dt.getInt("id"), dt.getString("name"), dt.getInt("disabled"));
+                    arrayNode.add(privilegeGroup.toJson().deepCopy());
                 }
                 return arrayNode;
+            } else {
+                throw new DBoperationException(GET_ALL, "Query Failed");
             }
-            else
-            {
-                throw  new DBoperationException(GET_ALL, "Query Failed");
-            }
-        }
-        catch(SIPLlibException e)
-        {
+        } catch (SIPLlibException e) {
             throw new DBoperationException(GET_ALL, e);
         }
     }
@@ -323,7 +336,44 @@ public class PrivilegeGroup extends DBentity {
 
     @Override
     public JsonNode toJson() {
-        return null;
+        ObjectMapper objectMapper = new ObjectMapper();
+        if (objectNode == null) {
+            objectNode = objectMapper.createObjectNode();
+        }
+
+        objectNode.put("id", this.id);
+
+        if (this.name != null) {
+            objectNode.put("name", this.name);
+        } else {
+            objectNode.put("name", "");
+        }
+
+        if (this.menuPrivilege != null) {
+            ArrayNode menuPrivilegeArray = objectMapper.createArrayNode();
+            /*for (int i = 0; i < this.menuPrivilege.length; i++) {
+                menuPrivilegeArray.add(this.menuPrivilege[i].toString(16));
+            }*/
+            for (int i = 0; i < this.menuPrivilege.length; i++) {
+                menuPrivilegeArray.add(String.valueOf(this.menuPrivilege[i]));
+            }
+            objectNode.set("menuPrivilege", menuPrivilegeArray);
+        } else {
+            objectNode.set("menuPrivilege", objectMapper.createArrayNode());
+        }
+
+        if (this.operationPrivilege != null && this.operationPrivilege.length != 0) {
+            ArrayNode operationPrivilegeArray = objectMapper.createArrayNode();
+            for (int i = 0; i < this.operationPrivilege.length; i++) {
+                operationPrivilegeArray.add(this.operationPrivilege[i]);
+            }
+            objectNode.set("operationPrivilege", operationPrivilegeArray);
+        } else {
+            objectNode.set("operationPrivilege", objectMapper.createArrayNode());
+        }
+
+        return objectNode;
+
         /*JsonObject obj = super.toJson();
 
         obj.add("id", new JsonPrimitive(this.id));
@@ -355,6 +405,7 @@ public class PrivilegeGroup extends DBentity {
 
     @Override
     public void fromJson(JsonNode json) {
+        ObjectMapper objectMapper = new ObjectMapper();
 
         JsonNode je;
         je = json.get("id");
@@ -365,7 +416,35 @@ public class PrivilegeGroup extends DBentity {
         if (je != null) {
             this.name = je.asText();
         }
+
+        /*je = json.get("menuPrivilege");
+        if (je != null && je.isArray()) {
+            ArrayNode an = (ArrayNode) je;
+            this.menuPrivilege = new BigInteger[an.size()];
+            for (int i = 0; i < an.size(); i++) {
+                this.menuPrivilege[i] = BigInteger.valueOf(Long.parseLong(an.get(i).asText(), 16));
+            }
+        }*/
+
         je = json.get("menuPrivilege");
+        if (je != null && je.isArray()) {
+            ArrayNode an = (ArrayNode) je;
+            this.menuPrivilege = new BigInteger[an.size()];
+            for (int i = 0; i < an.size(); i++) {
+                this.menuPrivilege[i] = BigInteger.valueOf(Long.parseLong(an.get(i).asText()));
+            }
+        }
+
+        je = json.get("operationPrivilege");
+        if (je != null && je.isArray()) {
+            ArrayNode an = (ArrayNode) je;
+            this.operationPrivilege = new byte[an.size()];
+            for (int i = 0; i < an.size(); i++) {
+                this.operationPrivilege[i] = Byte.parseByte(an.get(i).asText());
+            }
+        }
+
+//        je = json.get("menuPrivilege");
 //        if (je != null) {
 //            JsonArray ja = je.getAsJsonArray();
 //            this.menuPrivilege = new BigInteger[ja.size()];
@@ -382,9 +461,9 @@ public class PrivilegeGroup extends DBentity {
 //            }
 //        }
     }
+
     @Override
-    public String getIdentifier()
-    {
-        return this.id+" "+this.name;
+    public String getIdentifier() {
+        return this.id + " " + this.name;
     }
 }

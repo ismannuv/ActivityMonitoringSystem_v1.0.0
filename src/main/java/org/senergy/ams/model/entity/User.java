@@ -2,33 +2,72 @@ package org.senergy.ams.model.entity;
 
 import SIPLlib.DBaccess2;
 import SIPLlib.DataTable;
-import SIPLlib.Helper;
 import SIPLlib.SIPLlibException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBentity;
 import org.senergy.ams.model.DBoperationException;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class User extends DBentity {
+    public static int NAME_SIZE=12;
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "status=" + status +
+                ", id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", password='" + password + '\'' +
+                ", cardUID=" + cardUID +
+                ", emailId='" + emailId + '\'' +
+                ", mobileNo='" + mobileNo + '\'' +
+                ", privilegeGroup=" + privilegeGroup +
+                ", pin='" + pin + '\'' +
+                ", validFrom='" + validFrom + '\'' +
+                ", validUpto='" + validUpto + '\'' +
+                ", fp1=" + fp1 +
+                ", fp2=" + fp2 +
+                ", authType=" + authType +
+                ", objectNode=" + objectNode +
+                '}';
+    }
+
+    public static enum USER_STATUS_ENUM {
+
+        INVALID(0), VALIDITY_EXPIRED(1), VALID(2);
+        private int value;
+
+        private USER_STATUS_ENUM(int val) {
+            this.value = val;
+        }
+
+        public static USER_STATUS_ENUM get(int val) {
+            switch (val) {
+                case 2:
+                    return VALIDITY_EXPIRED;
+                case 3:
+                    return VALID;
+                default:
+                    return INVALID;
+            }
+        }
+
+        public int getValue() {
+            return this.value;
+        }
+    }
+    public USER_STATUS_ENUM status=USER_STATUS_ENUM.INVALID;
     public final static String ENTITY_NANE = "User";
-    //    public static final int DUMMY_USER=0,SUPER_ADMIN = 1,DB_ADMIN=2,SUPERVISOR=3,ATTENDANT=4;
+
     public String id;
-    protected String name;
+    public String name;
     private String password;
     public BigInteger cardUID;
     private String emailId;
@@ -38,10 +77,43 @@ public class User extends DBentity {
     public String validFrom, validUpto;
     public int fp1, fp2;
     private int authType = 1;
-    public ObjectNode uObjectNode;
 
+    protected ObjectNode objectNode;
 
-// '1'-'Pin + Card','2'-'Card + Finger','3'-'Finger + Pin'
+    public User() {
+        super(ENTITY_NANE, 0);
+    }
+
+    public User(String id) {
+        super(ENTITY_NANE, 0);
+        this.id = id;
+    }
+
+    public User(String id, String name, String emailId, String mobileNo, int disabled) {
+        super(ENTITY_NANE, 0);
+        this.id = id;
+        this.name = name;
+        this.emailId = emailId;
+        this.mobileNo = mobileNo;
+        this.disabled = disabled;
+    }
+
+    public User(String id, String name, BigInteger cardUID, String emailId, String mobileNo, String pin, String validFrom, String validUpto, int fp1, int fp2, int authType, int disabled) {
+        super(ENTITY_NANE, 0);
+        this.id = id;
+        this.name = name;
+        this.cardUID = cardUID;
+        this.emailId = emailId;
+        this.mobileNo = mobileNo;
+        this.pin = pin;
+        this.validFrom = validFrom;
+        this.validUpto = validUpto;
+        this.fp1 = fp1;
+        this.fp2 = fp2;
+        this.authType = authType;
+        this.disabled = disabled;
+    }
+
 
 
     public enum Operation_enum {
@@ -105,25 +177,6 @@ public class User extends DBentity {
         }
     }
 
-    public User() {
-        super(ENTITY_NANE, 0);
-    }
-
-    public User(String id) {
-
-        super(ENTITY_NANE, 0);
-        this.id = id;
-    }
-
-    public User(String id, String name, BigInteger cardUID, String mobileNo, String emailId, int disabled) {
-        super(ENTITY_NANE, disabled);
-        this.id = id;
-        this.name = name;
-        this.cardUID = cardUID;
-        this.mobileNo = mobileNo;
-        this.emailId = emailId;
-        this.disabled = disabled;
-    }
 
     public boolean login() throws DBoperationException {
         try {
@@ -140,11 +193,9 @@ public class User extends DBentity {
 
                     ObjectMapper om = new ObjectMapper();
                     ObjectNode objectNode = om.createObjectNode();
-                    objectNode.put("id",dt.getInt("privilegeGroupId"));
+                    objectNode.put("id", dt.getInt("privilegeGroupId"));
 
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.add("id", new JsonPrimitive(dt.getInt("privilegeGroupId")));
-
+//                    this.privilegeGroup = (PrivilegeGroup) new PrivilegeGroup().get1(DBcon, objectNode);
                     this.privilegeGroup = om.treeToValue(new PrivilegeGroup().get(DBcon, objectNode).get(0), PrivilegeGroup.class);
 
                     return true;
@@ -157,11 +208,6 @@ public class User extends DBentity {
         } catch (Exception ex) {
             throw new DBoperationException(GET, ex);
         }
-    }
-
-    @Override
-    public String getIdentifier() {
-        return null;
     }
 
     public boolean addDBentity(DBentity entity) throws DBoperationException {
@@ -187,9 +233,11 @@ public class User extends DBentity {
     public static ArrayNode getAllDBentity(DBentity entity, JsonNode filter) throws DBoperationException {
         return entity.getAll(null, filter);
     }
+
     public static void getAllDBentityNew(DBentity entity, JsonNode filter) {
         entity.getAllNew(null, filter);
     }
+
     public static ArrayNode getDBentity(DBentity entity, JsonNode obj) throws DBoperationException {
         return entity.get(null, obj);
     }
@@ -222,6 +270,11 @@ public class User extends DBentity {
     }
 
     @Override
+    public String getIdentifier() {
+        return null;
+    }
+
+    @Override
     public boolean add(DBaccess2 conObj) throws DBoperationException {
         try {
             this.createDBcon(conObj);
@@ -250,8 +303,6 @@ public class User extends DBentity {
 
             boolean updateLocUser = false;
             if (DBcon.preparedQuery("update user set name=?, cardUid=?, emailId=?, mobileNo=?, validFrom=?, validUpto=?, pin=?, privilegeGroupId=?, fp1=?, fp2=?, authType=? where id=?", this.name, this.cardUID, this.emailId, this.mobileNo, this.validFrom, this.validUpto, this.pin, this.privilegeGroup.id, this.fp1, this.fp2, this.authType, this.id)) {
-
-
                 return true;
             } else {
                 throw new DBoperationException(UPDATE, "Failed to update user table");
@@ -299,28 +350,19 @@ public class User extends DBentity {
     @Override
     public ArrayNode get(DBaccess2 conObj, JsonNode obj) throws DBoperationException {
         try {
+            this.createDBcon(conObj);
             ObjectMapper objectMapper = new ObjectMapper();
             ArrayNode arrayNode = objectMapper.createArrayNode();
             this.id = obj.get("id").asText();
-            this.createDBcon(conObj);
             if (DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.id='" + this.id + "'")) {
                 DataTable dt = DBcon.getResultSet();
                 if (dt.next()) {
-                    User user = new User(dt.getString("id"), dt.getString("name"), dt.getBigInteger("cardUid"), dt.getString("mobileNo"), dt.getString("email"), dt.getInt("disabled"));
-                    user.pin = dt.getString("pin");
-                    user.emailId = dt.getString("emailId");
-                    user.validFrom = dt.getString("validFrom");
-                    user.validUpto = dt.getString("validUpto");
-                    user.fp1 = dt.getInt("fp1");
-                    user.fp2 = dt.getInt("fp2");
-                    user.authType = dt.getInt("authType");
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.add("id", new JsonPrimitive(dt.getInt("privilegeGroupId")));
-                    ObjectMapper om = new ObjectMapper();
-                    ObjectNode objectNode = om.createObjectNode();
-                    objectNode.put("id",dt.getInt("privilegeGroupId"));
+                    User user = new User(dt.getString("id"), dt.getString("name"), dt.getBigInteger("cardUID"), dt.getString("emailId"), dt.getString("mobileNo"), dt.getString("pin"),
+                            dt.getString("validFrom"), dt.getString("validUpto"), dt.getInt("fp1"), dt.getInt("fp2"), dt.getInt("authType"),
+                            dt.getInt("disabled"));
 
-
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.put("id", dt.getInt("privilegeGroupId"));
                     user.privilegeGroup = objectMapper.treeToValue(new PrivilegeGroup().get(DBcon, objectNode).get(0), PrivilegeGroup.class);
 
                     arrayNode.add(user.toJson());
@@ -344,52 +386,46 @@ public class User extends DBentity {
     @Override
     public ArrayNode getAll(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
         try {
+            this.createDBcon(conObj);
             ObjectMapper objectMapper = new ObjectMapper();
             ArrayNode arrayNode = objectMapper.createArrayNode();
             int all = filter.get("all").asInt();
-            int limit = filter.get("limit").asInt();
-            this.createDBcon(conObj);
             String qry = "";
             switch (all) {
-
                 case DBentity.GET_ALL_ENABLED:
-                    qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled!=0";
+                    qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled=0";
+                    break;
+                case DBentity.GET_ALL_DISABLED:
+                    qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled=1";
                     break;
                 default:
-                    qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
-                            "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-                            " where u.privilegeGroupId not in(0,1) limit "+limit;
+                    qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,u.privilegeGroupId,pg.name AS 'role' FROM user u LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId where u.privilegeGroupId not in(0,1) ";
                     break;
             }
-            System.out.println("######111 :"+System.currentTimeMillis());
             if (DBcon.dqlQuery(qry)) {
-                System.out.println("######222 :"+System.currentTimeMillis());
                 DataTable dt = DBcon.getResultSet();
-                System.out.println("######333 :"+System.currentTimeMillis());
-                User user=null;
-                PrivilegeGroup privilegeGroup=null;
+                User user = null;
+                PrivilegeGroup privilegeGroup = null;
                 while (dt.next()) {
-                    if(user==null){
-                        user= new User(dt.getString("id"), dt.getString("name"), dt.getBigInteger("cardUid"), dt.getString("mobileNo"), dt.getString("emailId"), dt.getInt("disabled"));
-                        privilegeGroup =new PrivilegeGroup(dt.getInt("privilegeGroupId"),dt.getString("role"));
-                    }else {
+                    if (user == null) {
+                        user = new User(dt.getString("id"), dt.getString("name"), dt.getString("emailId"), dt.getString("mobileNo"), dt.getInt("disabled"));
+                        privilegeGroup = new PrivilegeGroup(dt.getInt("privilegeGroupId"), dt.getString("role"));
+                    } else {
                         user.id = dt.getString("id");
                         user.name = dt.getString("name");
-                        user.cardUID = dt.getBigInteger("cardUid");
-                        user.mobileNo = dt.getString("mobileNo");
                         user.emailId = dt.getString("emailId");
+                        user.mobileNo = dt.getString("mobileNo");
                         user.disabled = dt.getInt("disabled");
-
-                        privilegeGroup.id=dt.getInt("privilegeGroupId");
-                        privilegeGroup.name=dt.getString("role");
                     }
-
                     user.validFrom = dt.getString("validFrom");
                     user.validUpto = dt.getString("validUpto");
+
+                    privilegeGroup.id = dt.getInt("privilegeGroupId");
+                    privilegeGroup.name = dt.getString("role");
                     user.privilegeGroup = privilegeGroup;
-                    arrayNode.add(user.toJson());
+
+                    arrayNode.add(user.toJson().deepCopy());
                 }
-                System.out.println("######444 :"+System.currentTimeMillis());
 
                 return arrayNode;
             } else {
@@ -399,306 +435,15 @@ public class User extends DBentity {
             throw new DBoperationException(GET_ALL, ex);
         }
     }
-    public void getAllNew2(DBaccess2 conObj, JsonNode filter)  {
-        this.createDBcon(conObj);
-        AMS.liveData.startFetchingData();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
 
-                try {
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    int all = filter.get("all").asInt();
-                    int limit = filter.has("limit") ? filter.get("limit").asInt() :1000;
-
-                    String qry = "";
-                    switch (all) {
-
-                        case DBentity.GET_ALL_ENABLED:
-                            qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled!=0";
-                            break;
-                        default:
-                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.cardUid,u.validFrom,u.validUpto,u.privilegeGroupId,pg.name AS 'role',u.disabled FROM user u\n" +
-                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-                                    " where u.privilegeGroupId not in(0,1) limit "+limit;
-//                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
-//                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-//                                    " where u.privilegeGroupId not in(0,1) ";
-                            break;
-                    }
-
-                    System.out.println("######111 :"+System.currentTimeMillis());
-                    if (DBcon.dqlQuery(qry)) {
-
-                        System.out.println("######222 :"+System.currentTimeMillis());
-                        DataTable dt = DBcon.getResultSet();
-                        System.out.println("######333 :"+System.currentTimeMillis());
-                        User user=null;
-
-                        ArrayNode arrayNode = objectMapper.createArrayNode();
-
-                        int size=1000;
-                        int total = dt.getRowCount();
-                        int cntr=0;
-                        while (dt.next()) {
-
-                            ObjectNode objectNode = objectMapper.createObjectNode();
-                            objectNode.put("id", dt.getString("id"));
-                            objectNode.put("name", dt.getString("name"));
-                            objectNode.put("cardUID", Helper.byteArrayToHexString(dt.getBigInteger("cardUid").toByteArray()));
-                            objectNode.put("emailId", dt.getString("emailId"));
-                            objectNode.put("mobileNo", dt.getString("mobileNo"));
-                            objectNode.put("validFrom", dt.getString("validFrom"));
-                            objectNode.put("validUpto", dt.getString("validUpto"));
-                            objectNode.set("privilegeGroup", objectMapper.createObjectNode()
-                                    .put("role",dt.getInt("privilegeGroupId"))
-                                    .put("name",dt.getString("role"))
-
-                            );
-                            arrayNode.add(objectNode);
-                            cntr++;
-                            if(cntr>=total){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-                            if(arrayNode.size()>=size){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-//                            Main.liveData.getAllQueueData.add(user.toJson());
-//                            Main.liveData.startSending=true;
-                        }
-                        System.out.println("######444 :"+System.currentTimeMillis());
-
-//                        return arrayNode;
-                    } else {
-                        AMS.liveData.setError("Query Failed");
-//                        throw new DBoperationException(GET_ALL, "Query Failed");
-                    }
-                } catch (Exception ex) {
-                    AMS.liveData.setError(ex);
-//                    throw new DBoperationException(GET_ALL, ex);
-                }
-                finally {
-                    AMS.liveData.stopFetchingData();
-                }
-            }
-        });
-        t.start();
+    @Override
+    public void getAllNew(DBaccess2 conObj, JsonNode filter) {
 
     }
-    public void getAllNew(DBaccess2 conObj, JsonNode filter)  {
-        this.createDBcon(conObj);
-        AMS.liveData.startFetchingData();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
 
-                try {
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    int all = filter.get("all").asInt();
-                    int limit = filter.has("limit") ? filter.get("limit").asInt() :1000;
-
-                    String qry = "";
-                    switch (all) {
-
-                        case DBentity.GET_ALL_ENABLED:
-                            qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled!=0";
-                            break;
-                        default:
-                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
-                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-                                    " where u.privilegeGroupId not in(0,1) limit "+limit;
-//                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
-//                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-//                                    " where u.privilegeGroupId not in(0,1) ";
-                            break;
-                    }
-
-                    System.out.println("######111 :"+System.currentTimeMillis());
-                    if (DBcon.dqlQuery(qry)) {
-
-                        System.out.println("######222 :"+System.currentTimeMillis());
-                        DataTable dt = DBcon.getResultSet();
-                        System.out.println("######333 :"+System.currentTimeMillis());
-                        User user=null;
-
-                        ArrayNode arrayNode = objectMapper.createArrayNode();
-
-                        int size=1000;
-                        int total = dt.getRowCount();
-                        int cntr=0;
-                        while (dt.next()) {
-                            if(user==null){
-                                user= new User(dt.getString("id"), dt.getString("name"), dt.getBigInteger("cardUid"), dt.getString("mobileNo"), dt.getString("emailId"), dt.getInt("disabled"));
-                            }else {
-                                user.id = dt.getString("id");
-                                user.name = dt.getString("name");
-                                user.cardUID = dt.getBigInteger("cardUid");
-                                user.mobileNo = dt.getString("mobileNo");
-                                user.emailId = dt.getString("emailId");
-                                user.disabled = dt.getInt("disabled");
-                            }
-
-                            user.validFrom = dt.getString("validFrom");
-                            user.validUpto = dt.getString("validUpto");
-                            user.privilegeGroup = new PrivilegeGroup(dt.getInt("privilegeGroupId"),dt.getString("role"));
-
-                            arrayNode.add(user.toJson().deepCopy());
-                            cntr++;
-                            if(cntr>=total){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-                            if(arrayNode.size()>=size){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-//                            Main.liveData.getAllQueueData.add(user.toJson());
-//                            Main.liveData.startSending=true;
-                        }
-                        System.out.println("######444 :"+System.currentTimeMillis());
-
-//                        return arrayNode;
-                    } else {
-                        AMS.liveData.setError("Query Failed");
-//                        throw new DBoperationException(GET_ALL, "Query Failed");
-                    }
-                } catch (Exception ex) {
-                    AMS.liveData.setError(ex);
-//                    throw new DBoperationException(GET_ALL, ex);
-                }
-                finally {
-                    AMS.liveData.stopFetchingData();
-                }
-            }
-        });
-        t.start();
-
-    }
-    public void getAllNew1(DBaccess2 conObj, JsonNode filter)  {
-        this.createDBcon(conObj);
-        AMS.liveData.startFetchingData();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                try {
-
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    int all = filter.get("all").asInt();
-                    int limit = filter.has("limit") ? filter.get("limit").asInt() :1000;
-                    Class.forName("com.mysql.jdbc.Driver").newInstance();
-                    // Establish a connection to the database
-                    Connection connection = DriverManager.getConnection("jdbc:mysql://"+Config.DBip+":"+Config.DBport+"/"+Config.DBname, Config.DBuser, Config.DBpassword);
-
-                    // Create a PreparedStatement with placeholders (?)
-                    Statement preparedStatement = connection.createStatement();
-
-
-                    String qry = "";
-                    switch (all) {
-
-                        case DBentity.GET_ALL_ENABLED:
-                            qry = "SELECT * FROM user u WHERE u.privilegeGroupId not in(0,1) and u.disabled!=0";
-                            break;
-                        default:
-                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.cardUid,u.validFrom,u.validUpto,u.privilegeGroupId,pg.name AS 'role',u.disabled FROM user u\n" +
-                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-                                    " where u.privilegeGroupId not in(0,1) limit "+limit;
-//                            qry = "SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
-//                                    "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
-//                                    " where u.privilegeGroupId not in(0,1) ";
-                            break;
-                    }
-                    // Execute the query and obtain the result set
-                    System.out.println("######111 :"+System.currentTimeMillis());
-                    try (ResultSet dt = preparedStatement.executeQuery(qry)) {
-                        System.out.println("######222 :"+System.currentTimeMillis());
-                        User user=null;
-
-                        ArrayNode arrayNode = objectMapper.createArrayNode();
-                        int size=1000;
-                        dt.last();
-                        int total = dt.getRow();
-                        dt.beforeFirst();
-                        int cntr=0;
-                        // Process the result set
-                        while (dt.next()) {
-                            if(user==null){
-                                user= new User(dt.getString("id"), dt.getString("name"), (new BigDecimal(dt.getObject("cardUid").toString())).toBigInteger(), dt.getString("mobileNo"), dt.getString("emailId"), dt.getInt("disabled"));
-                            }else {
-                                user.id = dt.getString("id");
-                                user.name = dt.getString("name");
-                                user.cardUID = (new BigDecimal(dt.getObject("cardUid").toString())).toBigInteger();
-                                user.mobileNo = dt.getString("mobileNo");
-                                user.emailId = dt.getString("emailId");
-                                user.disabled = dt.getInt("disabled");
-                            }
-
-                            user.validFrom = dt.getString("validFrom");
-                            user.validUpto = dt.getString("validUpto");
-                            user.privilegeGroup = new PrivilegeGroup(dt.getInt("privilegeGroupId"),dt.getString("role"));
-
-                            arrayNode.add(user.toJson().deepCopy());
-                            cntr++;
-                            if(cntr>=total){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-                            if(arrayNode.size()>=size){
-                                AMS.liveData.getAllQueueDataArrayNode.add(arrayNode.deepCopy());
-                                AMS.liveData.startSending=true;
-                                arrayNode.removeAll();
-                            }
-
-                        }
-                    }
-                    /*System.out.println("######111 :"+System.currentTimeMillis());
-                    if (DBcon.dqlQuery(qry)) {
-
-                        System.out.println("######222 :"+System.currentTimeMillis());
-                        DataTable dt = DBcon.getResultSet();
-                        System.out.println("######333 :"+System.currentTimeMillis());
-
-
-
-                        while (dt.next()) {
-
-//                            Main.liveData.getAllQueueData.add(user.toJson());
-//                            Main.liveData.startSending=true;
-                        }
-                        System.out.println("######444 :"+System.currentTimeMillis());
-
-//                        return arrayNode;
-                    } else {
-                        Main.liveData.setError("Query Failed");
-//                        throw new DBoperationException(GET_ALL, "Query Failed");
-                    }*/
-                } catch (Exception ex) {
-                    AMS.liveData.setError(ex);
-//                    throw new DBoperationException(GET_ALL, ex);
-                }
-                finally {
-                    AMS.liveData.stopFetchingData();
-                }
-            }
-        });
-        t.start();
-
-    }
     @Override
     public ArrayNode export(DBaccess2 conObj, JsonNode filter) throws DBoperationException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-        return arrayNode;
+        return null;
     }
 
     @Override
@@ -706,139 +451,86 @@ public class User extends DBentity {
         return null;
     }
 
-    /*private void getEnrolledFingers(DBaccess2 DBcon) throws SIPLlibException {
-        this.enrolledFingers = "";
-        this.createDBcon(DBcon);
-        if (this.DBcon.dqlQuery("select GROUP_CONCAT(ub.`index`) as 'fingers' from userbiometrics ub where ub.`type`=1 and ub.userId='" + this.id + "'")) {
-            DataTable dt = DBcon.getResultSet();
-            if (dt.next()) {
-                this.enrolledFingers = dt.getString("fingers");
-            }
-        }
-    }*/
-
     @Override
     public JsonNode toJson() {
-        /*ObjectMapper objectMapper = new ObjectMapper();
-
-//        ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-            return objectMapper.valueToTree(this);*/
 
         ObjectMapper objectMapper = new ObjectMapper();
-        if(uObjectNode==null){
-            uObjectNode =objectMapper.createObjectNode();
+
+        if (objectNode == null) {
+            objectNode = objectMapper.createObjectNode();
         }
 
         if (this.id != null) {
-            uObjectNode.put("id", this.id);
+            objectNode.put("id", this.id);
         } else {
-//            uObjectNode.put("id", "");
+            objectNode.put("id", "");
         }
+
         if (this.name != null) {
-            uObjectNode.put("name", this.name);
+            objectNode.put("name", this.name);
         } else {
-//            uObjectNode.put("name", "");
+            objectNode.put("name", "");
         }
+
+        if (this.password != null) {
+            objectNode.put("password", this.password);
+        } else {
+            objectNode.put("password", "");
+        }
+
         if (this.cardUID != null) {
-            uObjectNode.put("cardUID", Helper.byteArrayToHexString(this.cardUID.toByteArray()));
+            objectNode.put("cardUID", this.cardUID);
         } else {
-//            uObjectNode.put("cardUID", "");
+            objectNode.put("cardUID", "");
         }
+
         if (this.emailId != null) {
-            uObjectNode.put("emailId", this.emailId);
+            objectNode.put("emailId", this.emailId);
         } else {
-//            uObjectNode.put("emailId", "");
+            objectNode.put("emailId", "");
         }
+
         if (this.mobileNo != null) {
-            uObjectNode.put("mobileNo", this.mobileNo);
+            objectNode.put("mobileNo", this.mobileNo);
         } else {
-//            uObjectNode.put("mobileNo", "");
+            objectNode.put("mobileNo", "");
         }
-        if (this.validFrom != null) {
-            uObjectNode.put("validFrom", this.validFrom);
-        } else {
-//            uObjectNode.put("validFrom", "");
-        }
-        if (this.validUpto != null) {
-            uObjectNode.put("validUpto", this.validUpto);
-        } else {
-//            uObjectNode.put("validUpto", "");
-        }
-        if (this.pin != null) {
-            uObjectNode.put("pin", this.pin);
-        } else {
-//            uObjectNode.put("pin", "");
-        }
+
         if (this.privilegeGroup != null) {
-            uObjectNode.set("privilegeGroup", this.privilegeGroup.toJson());
-            uObjectNode.put("role", this.privilegeGroup.id);
+            objectNode.set("privilegeGroup", this.privilegeGroup.toJson());
+            objectNode.put("role", this.privilegeGroup.id);
         } else {
-            uObjectNode.set("privilegeGroup", new ObjectMapper().createObjectNode());
+            objectNode.set("privilegeGroup", new ObjectMapper().createObjectNode());
         }
-        uObjectNode.put("fp1", this.fp1);
-        uObjectNode.put("fp2", this.fp2);
-        uObjectNode.put("authType", this.authType);
-        return uObjectNode;
-        /*
 
-
-
-         obj = new JsonObject();
-        if (this.id != null) {
-            obj.add("id", new JsonPrimitive(this.id));
-        } else {
-            obj.add("id", new JsonPrimitive(""));
-        }
-        if (this.name != null) {
-            obj.add("name", new JsonPrimitive(this.name));
-        } else {
-            obj.add("name", new JsonPrimitive(""));
-        }
-        if (this.cardUID != null) {
-            obj.add("cardUID", new JsonPrimitive(Helper.byteArrayToHexString(this.cardUID.toByteArray())));
-        } else {
-            obj.add("cardUID", new JsonPrimitive(""));
-        }
-        if (this.emailId != null) {
-            obj.add("emailId", new JsonPrimitive(this.emailId));
-        } else {
-            obj.add("emailId", new JsonPrimitive(""));
-        }
-        if (this.mobileNo != null) {
-            obj.add("mobileNo", new JsonPrimitive(this.mobileNo));
-        } else {
-            obj.add("mobileNo", new JsonPrimitive(""));
-        }
-        if (this.validFrom != null) {
-            obj.add("validFrom", new JsonPrimitive(this.validFrom));
-        } else {
-            obj.add("validFrom", new JsonPrimitive(""));
-        }
-        if (this.validUpto != null) {
-            obj.add("validUpto", new JsonPrimitive(this.validUpto));
-        } else {
-            obj.add("validUpto", new JsonPrimitive(""));
-        }
         if (this.pin != null) {
-            obj.add("pin", new JsonPrimitive(this.pin));
+            objectNode.put("pin", this.pin);
         } else {
-            obj.add("pin", new JsonPrimitive(""));
+            objectNode.put("pin", "");
         }
-        if (this.privilegeGroup != null) {
-            obj.add("privilegeGroup", this.privilegeGroup.toJson());
-            obj.add("role", new JsonPrimitive(this.privilegeGroup.id));
-        } else {
-            obj.add("privilegeGroup", new JsonObject());
-        }
-        obj.add("fp1", new JsonPrimitive(this.fp1));
-        obj.add("fp2", new JsonPrimitive(this.fp2));
-        obj.add("authType", new JsonPrimitive(this.authType));
 
-        return obj;*/
+        if (this.validFrom != null) {
+            objectNode.put("validFrom", this.validFrom);
+        } else {
+            objectNode.put("validFrom", "");
+        }
+
+        if (this.validUpto != null) {
+            objectNode.put("validUpto", this.validUpto);
+        } else {
+            objectNode.put("validUpto", "");
+        }
+
+        objectNode.put("fp1", this.fp1);
+        objectNode.put("fp2", this.fp2);
+        objectNode.put("authType", this.authType);
+
+        return objectNode;
     }
 
     @Override
     public void fromJson(JsonNode json) {
+
         JsonNode je;
         je = json.get("id");
         if (je != null) {
@@ -893,6 +585,7 @@ public class User extends DBentity {
         if (je != null) {
             this.authType = je.asInt();
         }
+
     }
 
     public String generateMD5(String data) {
@@ -912,33 +605,80 @@ public class User extends DBentity {
             return "";
         }
     }
+    public boolean checkValidity()
+    {
+        try{
+            long from,to,curr=System.currentTimeMillis();
+            if(this.validFrom==null)
+                from=curr;
+            else
+                from=Config.dateFormat.parse(this.validFrom).getTime();
 
-    public DBentity getUserFromPassword(DBaccess2 conObj, String password) throws DBoperationException {
-        try {
-            this.createDBcon(conObj);
-            if (DBcon.dqlQuery("SELECT u.*,p.id AS 'privilegeGroupId' from user u left join privilegegroup p on u.privilegeGroupId=p.id WHERE u.password='" + generateMD5(password) + "'")) {
-                DataTable dt = DBcon.getResultSet();
-                if (dt.next()) {
-                    User user = new User(dt.getString("id"), dt.getString("name"), dt.getBigInteger("cardUid"), dt.getString("mobileNo"), dt.getString("emailId"), dt.getInt("disabled"));
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.add("id", new JsonPrimitive(dt.getInt("privilegeGroupId")));
+            if(this.validUpto ==null)
+                to=-1;
+            else
+                to= Config.dateFormat.parse(this.validUpto).getTime();
 
-                    ObjectMapper om = new ObjectMapper();
-                    ObjectNode objectNode = om.createObjectNode();
-                    objectNode.put("id",dt.getInt("privilegeGroupId"));
-
-                    user.privilegeGroup = om.treeToValue(new PrivilegeGroup().get(DBcon, objectNode).get(0), PrivilegeGroup.class);
-
-
-                    return user;
-                } else {
-                    throw new DBoperationException(GET, "Entity Not Found");
-                }
-            } else {
-                throw new DBoperationException(GET, "Query Failed");
+            if(to==-1)
+            {
+                if(from<=curr)
+                    return true;
+                else
+                    return false;
             }
-        } catch (Exception ex) {
-            throw new DBoperationException(GET, ex);
+            else
+            {
+                if(from<=curr && curr<to)
+                    return true;
+                else
+                    return false;
+            }
+        }
+        catch(Exception e)
+        {
+            return false;
+        }
+    }
+    public void getUserBy(int mode) throws Exception {
+        this.createDBcon(null);
+        String qry="";
+        switch (mode){
+           case 1://by card
+               System.out.println("card :"+this.cardUID);
+               qry="SELECT u.*,if(ub.userId IS NULL,0,1) AS 'FpEnrolled' from user u LEFT JOIN userbiometrics ub ON ub.userId=u.id where u.disabled=0 and u.cardUid ="+this.cardUID.toString();
+               break;
+            case 2://by FP (user id)
+                System.out.println("id :"+this.id);
+
+                qry="SELECT u.*,if(ub.userId IS NULL,0,1) AS 'FpEnrolled' from user u LEFT JOIN userbiometrics ub ON ub.userId=u.id where u.disabled=0 and u.id ='"+this.id+"'";
+
+                break;
+            case 3://by pin
+                System.out.println("pin :"+this.pin);
+
+                qry="SELECT u.*,if(ub.userId IS NULL,0,1) AS 'FpEnrolled' from user u LEFT JOIN userbiometrics ub ON ub.userId=u.id where u.disabled=0 and u.pin ='"+this.pin+"'";
+                break;
+        }
+        if (DBcon.dqlQuery(qry) ) {
+            DataTable dt = DBcon.getResultSet();
+            if (dt.next()) {
+                this.id = dt.getString("id");
+                this.name = dt.getString("name");
+                this.cardUID = dt.getBigInteger("cardUid");
+                this.mobileNo = dt.getString("mobileNo");
+                this.emailId = dt.getString("emailId");
+                this.pin = dt.getString("pin");
+                this.fp1 = dt.getInt("FpEnrolled");// using as fp enrolled or not
+                this.validFrom = dt.getString("validFrom");
+                this.validUpto = dt.getString("validUpto");
+                if(!this.checkValidity()){
+                    this.status = USER_STATUS_ENUM.VALIDITY_EXPIRED;
+                }else{
+                    this.status = USER_STATUS_ENUM.VALID;
+                }
+            }
+        } else {
+            throw new DBoperationException(GET, "Query Failed");
         }
     }
 }

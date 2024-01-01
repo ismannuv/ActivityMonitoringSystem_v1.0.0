@@ -9,15 +9,11 @@ import com.sun.net.httpserver.*;
 import org.senergy.ams.app.Constants;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.server.HttpHandlers.AccountOperations;
-import org.senergy.ams.server.HttpHandlers.DbEntityOperations;
+import org.senergy.ams.server.HttpHandlers.DBEntityOperations;
 
-import javax.net.ssl.*;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.KeyStore;
 import java.util.logging.Level;
 
 
@@ -33,7 +29,7 @@ public class ServerSync {
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 //            HttpsServer server = HttpsServer.create(new InetSocketAddress("192.168.1.65",port), 0);
             server.createContext(Constants.ACCOUNT_OPERATION_URL,new AccountOperations());
-            server.createContext(Constants.DBENTITY_OPERATION_URL,new DbEntityOperations());
+            server.createContext(Constants.DBENTITY_OPERATION_URL,new DBEntityOperations());
 //                context.setHandler(ServerSync::handleRequest);
             server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(10));
             if(!Config.enableHttps)

@@ -16,7 +16,7 @@ import org.senergy.ams.server.JwtHandler;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class DbEntityOperations implements HttpHandler {
+public class DBEntityOperations implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) {
         long totalRAM =Runtime.getRuntime().totalMemory();
@@ -118,7 +118,10 @@ public class DbEntityOperations implements HttpHandler {
                     case DBentity.GET_ALL_DISABLED:
                     case DBentity.GET_ALL_ENABLED:
                     case DBentity.GET_ALL:
-
+                        jsonResponse.data = User.getAllDBentity(((DBentity) DBentityClass), (jsonRequest.data.get(0)));
+                        jsonResponse.status = true;
+                        break;
+                    case DBentity.GET_COUNT:
                         OutputStream os = null;
                         try {
                             User.getAllDBentityNew( ((DBentity) DBentityClass),jsonRequest.data.get(0));
@@ -130,7 +133,7 @@ public class DbEntityOperations implements HttpHandler {
 
                             while ( true ){
                                 if(AMS.liveData.startSending &&  !AMS.liveData.getAllQueueDataArrayNode.isEmpty() ){
-//                                    jsonResponse.data = objectMapper.createArrayNode().add(Main.liveData.getAllQueueData.remove());
+//                                    jsonResponse.data = objectMapper.createArrayNode().add(AMS.liveData.getAllQueueData.remove());
 
                                     if(first){
 
@@ -170,7 +173,7 @@ public class DbEntityOperations implements HttpHandler {
                         }catch (Exception ex){
                             ex.printStackTrace();
                             jsonResponse.setError(ex);
-//                            Main.liveData.setError(ex);
+//                            AMS.liveData.setError(ex);
                         }finally {
 //                            os.write("]}".getBytes());
 //                            os.close();

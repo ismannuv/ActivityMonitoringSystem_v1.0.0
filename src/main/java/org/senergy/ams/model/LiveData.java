@@ -39,6 +39,7 @@ public class LiveData {
         printWriter.close();
 
         this.error= stringWriter.toString();
+        stopFetchingData();
     }
 
     public void startFetchingData(){

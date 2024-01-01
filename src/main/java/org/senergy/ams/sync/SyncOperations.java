@@ -6,6 +6,8 @@
 package org.senergy.ams.sync;
 
 import SIPLlib.Helper;
+import org.senergy.ams.app.AMS;
+import org.senergy.ams.model.entity.User;
 
 import java.math.BigInteger;
 
@@ -46,24 +48,13 @@ public class SyncOperations  {
         {
             case (byte) (SyncCommands.AUTHENTICATION & 0xFF):
             {
-                int authType= Helper.getUint8(pkt.data,1);
-                switch (authType){
-                    case 1://card
-                    {
-                        BigInteger cardUid=Helper.getUint64_BE(pkt.data, 2);
-
-                    }
-                    break;
-                    case 2://FP
-                    {
-                        long userId=Helper.getUint32_BE(pkt.data, 2);
-                    }
-                    break;
-                    case 3://PINs
-                    {
-                        long pin=Helper.getUint32_BE(pkt.data, 2);
-                    }
-                    break;
+                try {
+                    byte[] rx = processUserAuth(pkt);
+                    pkt.data=rx;
+                } catch (Exception e) {
+                    AMS.error="Auth error - "+e.getMessage();
+                    pkt.data=new byte[]{0x1};
+                    e.printStackTrace();
                 }
             }
             break;
@@ -72,8 +63,65 @@ public class SyncOperations  {
 
             }
             break;
+            case (byte) (SyncCommands.GET_USER_ACTIVITY & 0xFF):
+            {
+
+            }
+            break;
 
         }
         return pkt;
+    }
+
+    private static byte[]  processUserAuth(SyncPacket pkt) throws Exception {
+        byte [] rx = new byte[48];
+        int authType= Helper.getUint8(pkt.data,1);
+        User user= new User();
+        switch (authType){
+            case 1://card
+            {
+                user.cardUID= Helper.getUint64_BE(pkt.data, 2);
+            }
+            break;
+            case 2://FP
+            {
+                long userId=Helper.getUint32_BE(pkt.data, 2);
+                user.id= String.valueOf(userId);
+
+            }
+            break;
+            case 3://PIN
+            {
+                long pin=Helper.getUint32_BE(pkt.data, 2);
+                user.pin= String.valueOf(pin);
+            }
+            break;
+        }
+        user.getUserBy(authType);
+        System.out.println("user :"+user);
+        int offSet=0;
+        //cabinet policy 0 - single, 1 -dual auth policy
+        Helper.setUint8(rx,offSet, (short) 1);
+        offSet++;
+        //status
+        Helper.setUint8(rx,offSet, (short) user.status.getValue());
+        offSet++;
+
+        if(user.status!= User.USER_STATUS_ENUM.INVALID){
+            //fp enrolled or not , 0- not enrolled, 1- enrolled
+            Helper.setUint8(rx,offSet, (short) user.fp1);
+            offSet++;
+            //user data
+            Helper.setUint32_BE(rx,offSet, Long.parseLong(user.id));
+            offSet+=4;
+            Helper.setString(rx,offSet,user.name.substring(0,User.NAME_SIZE));
+            offSet+=User.NAME_SIZE;
+            Helper.setUint64_BE(rx,offSet,user.cardUID);
+            offSet+=8;
+            Helper.setUint32_BE(rx,offSet, Long.parseLong(user.pin));
+            offSet+=4;
+        }
+        return rx;
+
     }
 }

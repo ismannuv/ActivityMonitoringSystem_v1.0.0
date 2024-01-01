@@ -173,10 +173,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     }
     public String getCabinetDatetime()
     {
-        byte[] data = new byte[20];
-        data[0]=0x11;
-        Helper.setString(data,1,"Senergy");
-        SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, data);
+        SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
         byte[] resp=exchange(SyncPacket.encode(tx), Config.respTimeout);
         if(resp!=null)
         {

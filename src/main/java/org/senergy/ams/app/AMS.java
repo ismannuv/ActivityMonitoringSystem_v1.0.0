@@ -9,6 +9,7 @@ import io.jsonwebtoken.Jwts;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.LiveData;
+import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.ServerSync;
 
 import javax.crypto.SecretKey;
@@ -26,13 +27,16 @@ public class AMS {
     public static int IAPtimeout=0;
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.out.println("Hello world!");
         Config config = new Config();
         config.init();
         ServerSync.start(Config.serverIp,Config.serverPort);
         SecretKey key = Jwts.SIG.HS256.key().build();
 
+        User user =new User();
+        user.id="1136";
+        user.getUserBy(2);
         while (true) {
             try {
                 serialListen();
