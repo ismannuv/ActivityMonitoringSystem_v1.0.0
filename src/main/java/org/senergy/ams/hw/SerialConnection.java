@@ -109,12 +109,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     break;
                 case WAIT_FOR_REQ:
 
-                    if(this.cmdRecvd)
-                    {
-                        this.close();
-                        this.state=STATES.IDLE;
-                    }
-                    else if(this.reqRecvd)
+                    if(this.reqRecvd || this.cmdRespRecvd)
                     {
                         byte[] reqPacket=new byte[this.reqLen];
                         System.arraycopy(this.rxBuff, 0, reqPacket, 0, this.reqLen);
@@ -670,6 +665,13 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
             }
         }
         return retVal;
+    }
+    public boolean writeBytes(byte[] tx){
+        try {
+            return this.serialPort.writeBytes(tx);
+        } catch (SerialPortException e) {
+        }
+        return false;
     }
 
 }

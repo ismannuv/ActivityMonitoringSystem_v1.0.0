@@ -21,7 +21,7 @@ public class AMS {
     public static KeySlot[] keySlots;
 
     public static long pktRx=0,pktTx=0,secCount=0;
-    private static SerialConnection serialComm=null;
+    public static SerialConnection serialComm=null;
     public static String portAvailable="Unavailable";
     public static String processingPktFrom="",error="";
 

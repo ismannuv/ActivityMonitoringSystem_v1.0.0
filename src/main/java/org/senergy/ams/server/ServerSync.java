@@ -9,6 +9,7 @@ import com.sun.net.httpserver.*;
 import org.senergy.ams.app.Constants;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.server.HttpHandlers.AccountOperations;
+import org.senergy.ams.server.HttpHandlers.AmsServer;
 import org.senergy.ams.server.HttpHandlers.DBEntityOperations;
 
 import java.io.InputStream;
@@ -30,6 +31,7 @@ public class ServerSync {
 //            HttpsServer server = HttpsServer.create(new InetSocketAddress("192.168.1.65",port), 0);
             server.createContext(Constants.ACCOUNT_OPERATION_URL,new AccountOperations());
             server.createContext(Constants.DBENTITY_OPERATION_URL,new DBEntityOperations());
+            server.createContext(Constants.AMS_SERVER_URL,new AmsServer());
 //                context.setHandler(ServerSync::handleRequest);
             server.setExecutor(java.util.concurrent.Executors.newFixedThreadPool(10));
             if(!Config.enableHttps)

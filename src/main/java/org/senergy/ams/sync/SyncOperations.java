@@ -9,8 +9,6 @@ import SIPLlib.Helper;
 import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.entity.User;
 
-import java.math.BigInteger;
-
 /**
  *
  * @author admin
@@ -28,9 +26,11 @@ public class SyncOperations  {
            switch(rxPkt.type)
            {
                case SyncPacket.SMT_PACKET:
-
-                       txPkt=processServerPacket(rxPkt);
-                break;
+                   txPkt= processStmRequest(rxPkt);
+               break;
+               case SyncPacket.BB_PACKET:
+                   processBbResponse(rxPkt);
+                   break;
            }
            if(txPkt!=null)
             reply=SyncPacket.encode(txPkt);
@@ -42,7 +42,30 @@ public class SyncOperations  {
         }
         return reply;
     }
-    private static SyncPacket processServerPacket(SyncPacket pkt)
+
+    private static void processBbResponse(SyncPacket pkt) {
+        switch (pkt.data[0])
+        {
+            case (byte) (SyncCommands.AUTHENTICATION & 0xFF):
+            {
+
+            }
+            break;
+            case (byte) (SyncCommands.EVENTS & 0xFF):
+            {
+
+            }
+            break;
+            case (byte) (SyncCommands.GET_USER_ACTIVITY & 0xFF):
+            {
+
+            }
+            break;
+
+        }
+    }
+
+    private static SyncPacket processStmRequest(SyncPacket pkt)
     {
         switch (pkt.data[0])
         {
