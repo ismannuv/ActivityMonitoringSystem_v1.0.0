@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.math.BigInteger;
 import java.sql.*;
 
 public class Test {
@@ -12,7 +13,7 @@ public class Test {
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "sipl";
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        Class.forName("com.mysql.jdbc.Driver").newInstance();
+        /*Class.forName("com.mysql.jdbc.Driver").newInstance();
         // SQL query to be executed
         String qry = "select count(*) as cnt from (SELECT u.id,u.name,u.emailId,u.mobileNo,u.validFrom,u.validUpto,pg.name AS 'role' FROM user u\n" +
                 "LEFT JOIN privilegegroup pg ON pg.id=u.privilegeGroupId\n" +
@@ -66,6 +67,9 @@ public class Test {
 //        objectNode.set("data",objectNode1);
 //        objectNode.set("data2",objectNode2);
         objectNode.set("data2",arrayNode);
-        System.out.println(objectNode);
+        System.out.println(objectNode);*/
+        BigInteger a=BigInteger.ZERO;
+        BigInteger b= BigInteger.valueOf(0);
+        System.out.println(a.equals(b));
     }
 }

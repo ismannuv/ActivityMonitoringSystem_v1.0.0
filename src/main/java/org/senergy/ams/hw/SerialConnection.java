@@ -1,4 +1,4 @@
-package org.senergy.ams.app;
+package org.senergy.ams.hw;
 
 import SIPLlib.Helper;
 import SIPLlib.SerialCommunication;
@@ -6,6 +6,7 @@ import jssc.SerialPort;
 import jssc.SerialPortEvent;
 import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
+import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.sync.SyncOperations;
 import org.senergy.ams.sync.SyncPacket;
@@ -31,6 +32,144 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     private int rxInPtr=0,dataPtr=0,dataLen=0,charTimeout=0,reqLen=0,pktError=0;
 
 
+    public void stateMachineNew()
+    {
+        String result="";
+        if(this.prevState!=this.state)
+        {
+            Config.logger.info("Main State : "+this.prevState+"-->"+this.state);
+            this.prevState=this.state;
+        }
+        if(this.delay>0)
+        {
+            this.delay--;
+        }
+        try{
+            switch(this.state)
+            {
+                case CONFIG_DATETIME:
+                    if(this.delay==0)
+                    {
+                        result=getCabinetDatetime();
+                        if(result!=null)
+                        {
+                            if(setServerDatetime(result))
+                            {
+                                /*Device d=new Device();
+                                d.getServerConfig();
+                                if(d.serverIP!=null)
+                                {
+                                    setServerNetwork(d.serverIP,d.serverGateway,d.serverMask);
+                                }*/
+                                this.state=STATES.IDLE;
+                            }
+                            else
+                            {
+                                this.delay=100;
+                            }
+                        }
+                        else
+                        {
+                            this.delay=100;
+                        }
+                    }
+                    break;
+                case IDLE:
+                    if(AMS.IAPmode)
+                    {
+                        this.close();
+                        this.state=STATES.IAP;
+                    }
+                    else if(!this.cmdRecvd)
+                    {
+                        this.state=STATES.OPEN;
+                    }
+
+                    break;
+                case IAP:
+                    if(AMS.IAPtimeout==0)
+                    {
+                        AMS.IAPmode=false;
+                        this.state=STATES.IDLE;
+                    }
+                    break;
+                case OPEN:
+                    if(this.open(this,this.serialPort.MASK_RXCHAR))
+                    {
+                        reqRecvd=false;
+                        rxInPtr=0;
+                        rxState=RX_STATES.RX_START_BYTE;
+                        this.state=STATES.WAIT_FOR_REQ;
+                        AMS.portAvailable=Config.serialPort;
+                    }
+                    else
+                    {
+                        AMS.portAvailable=Config.serialPort+" Unavailable";
+                    }
+                    break;
+                case WAIT_FOR_REQ:
+
+                    if(this.cmdRecvd)
+                    {
+                        this.close();
+                        this.state=STATES.IDLE;
+                    }
+                    else if(this.reqRecvd)
+                    {
+                        byte[] reqPacket=new byte[this.reqLen];
+                        System.arraycopy(this.rxBuff, 0, reqPacket, 0, this.reqLen);
+                        AMS.pktRx++;
+                        AMS.processingPktFrom="master";
+                        if((Config.logConfig&2)>0)
+                        {
+                            Config.logger.info("$$$$  req :"+ Helper.byteArrayToHexString(reqPacket));
+                            Config.logger.info("$$$$ seq :"+Helper.getUint16_LE(reqPacket,1));
+                            Config.logger.info("$$$$ data len :"+Helper.getUint16_LE(rxBuff, 3));
+                        }
+
+//                        Config.logger.info("##### req :"+Helper.byteArrayToHexString(reqPacket));
+                        byte[] replyPacket = SyncOperations.process(reqPacket);
+                        if(replyPacket!=null && replyPacket.length>0)
+                        {
+                            this.serialPort.writeBytes(replyPacket);
+                            AMS.pktTx++;
+                            delay=10;
+                            this.state=STATES.SEND_WAIT;
+                        }
+                        else
+                        {
+                            Config.logger.info("-----> IN STATE STATES.SEND_WAIT");
+                            delay=2;
+                            this.state=STATES.SEND_WAIT;
+                        }
+                    }
+                    break;
+                case SEND_WAIT:
+                    if(this.delay==0)
+                    {
+                        this.close();
+                        this.state=STATES.IDLE;
+                    }
+                    break;
+                default:
+                    if(Config.serverTimeSync)
+                    {
+                        this.delay=1000;
+                        this.state=STATES.CONFIG_DATETIME;
+                    }
+                    else
+                    {
+                        this.state=STATES.IDLE;
+                    }
+                    break;
+            }
+        }
+        catch(Throwable e)
+        {
+            e.printStackTrace();
+            AMS.error=e.toString();
+        }
+    }
     public void stateMachine()
     {
         String result="";
@@ -151,7 +290,6 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     }
                     break;
                 default:
-
                     if(Config.serverTimeSync)
                     {
                         this.delay=1000;
@@ -161,7 +299,6 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     {
                         this.state=STATES.IDLE;
                     }
-
                     break;
             }
         }

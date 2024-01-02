@@ -1,11 +1,12 @@
 package org.senergy.ams.app;
 
-import SIPLlib.DBaccess;
 import SIPLlib.DBaccess2;
 import SIPLlib.SIPLlibException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import io.jsonwebtoken.Jwts;
+import org.senergy.ams.hw.KeySlot;
+import org.senergy.ams.hw.SerialConnection;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.LiveData;
@@ -17,6 +18,7 @@ import java.util.Date;
 
 public class AMS {
     public static LiveData liveData=new LiveData();
+    public static KeySlot[] keySlots;
 
     public static long pktRx=0,pktTx=0,secCount=0;
     private static SerialConnection serialComm=null;
@@ -28,15 +30,13 @@ public class AMS {
 
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Hello world!");
         Config config = new Config();
         config.init();
         ServerSync.start(Config.serverIp,Config.serverPort);
-        SecretKey key = Jwts.SIG.HS256.key().build();
+//        SecretKey key = Jwts.SIG.HS256.key().build();
 
-        User user =new User();
-        user.id="1136";
-        user.getUserBy(2);
+
+
         while (true) {
             try {
                 serialListen();
@@ -83,6 +83,12 @@ public class AMS {
             DBcon.preparedQuery("update processStatus set runningAt='"+Config.dateFormat.format(new Date())+"',status=? where id=1",obj.toString());
         } catch (SIPLlibException e) {
             throw new RuntimeException(e);
+        }
+    }
+    private static void initKeySlot(){
+        AMS.keySlots=new KeySlot[32];
+        for (int i = 0; i < keySlots.length; i++) {
+            AMS.keySlots[i]=new KeySlot();
         }
     }
 }
