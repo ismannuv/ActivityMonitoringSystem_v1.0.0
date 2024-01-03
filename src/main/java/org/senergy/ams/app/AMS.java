@@ -35,11 +35,11 @@ public class AMS {
         ServerSync.start(Config.serverIp,Config.serverPort);
 //        SecretKey key = Jwts.SIG.HS256.key().build();
 
+        serialListen();
 
-
-        while (true) {
+        /*while (true) {
             try {
-                serialListen();
+
 
                 secCount++;
                 if(secCount>=10)
@@ -55,7 +55,7 @@ public class AMS {
             catch (Exception ex) {
                 ex.printStackTrace();
             }
-        }
+        }*/
 
 
 
@@ -66,7 +66,7 @@ public class AMS {
         {
             serialComm = new SerialConnection(Config.serialPort, Config.serialBaud);
         }
-        serialComm.stateMachine();
+        serialComm.run();
     }
 
     private static void updateProcessStatus()

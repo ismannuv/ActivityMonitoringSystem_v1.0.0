@@ -17,11 +17,13 @@ import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-public class SerialConnection extends SerialCommunication implements SerialPortEventListener {
+public class SerialConnection extends SerialCommunication implements SerialPortEventListener,Runnable {
     public SerialConnection(String portName,int baud)
     {
         super(portName,baud,8,1,0);
     }
+
+
 
     private static enum STATES{UNKNOWN,CONFIG_DATETIME,IDLE,OPEN,WAIT_FOR_REQ,SEND_WAIT,IAP};
     private static enum RX_STATES {UNKNOWN,RX_START_BYTE,RX_SEQ_NO,RX_SIZE,RX__DATA,RX_CRC};
@@ -31,7 +33,24 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     private boolean reqRecvd=false,cmdRecvd=false,cmdRespRecvd=false,cmdRespProcessed;
     private int delay=0;
     private int rxInPtr=0,dataPtr=0,dataLen=0,charTimeout=0,reqLen=0,pktError=0;
+    private int sleepTime=10;
+    private int healthPktSendTimeout=6000;//60 sec
+    private CommandSync commandSync;
+    @Override
+    public void run() {
+        commandSync=new CommandSync();
+        commandSync.run();
+        while (true) {
+            try {
 
+                stateMachine();
+                Thread.sleep(sleepTime);
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
 
     public void stateMachine()
     {
@@ -114,6 +133,10 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
 
                     if(this.reqRecvd || this.cmdRespRecvd)
                     {
+                        if(this.reqRecvd){// if STM request received, slow down other commands for 1 min
+                            healthPktSendTimeout=6000;
+                            this.commandSync.setNextStateTimeout(600);
+                        }
                         byte[] reqPacket=new byte[this.reqLen];
                         System.arraycopy(this.rxBuff, 0, reqPacket, 0, this.reqLen);
                         AMS.pktRx++;
@@ -151,6 +174,14 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                         }
 
                     }
+                    /*else{
+                        if(this.healthPktSendTimeout<=0){
+                            healthPktSendTimeout=6000;
+                            sendHealthPacket();
+                        }else{
+                            this.healthPktSendTimeout--;
+                        }
+                    }*/
                     break;
                 case SEND_WAIT:
                     if(this.delay==0)
@@ -178,6 +209,11 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
             AMS.error=e.toString();
         }
     }
+
+    private void sendHealthPacket() {
+
+    }
+
     /*public void stateMachineOld()
     {
         String result="";
@@ -426,12 +462,15 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                 this.cmdRespRecvd=false;
                 this.serialPort.writeBytes(tx);
 
-
-                while (AmsServer.respObjectNode.isEmpty()){
-
+                int sleeptime=10;
+                if (timeout>5000)
+                    timeout=5000;
+                while (AmsServer.respObjectNode.isEmpty() || timeout>0){
+                    Thread.sleep(sleeptime);
+                    timeout=timeout-sleeptime;
                 }
 
-            } catch (SerialPortException e) {
+            } catch (SerialPortException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
