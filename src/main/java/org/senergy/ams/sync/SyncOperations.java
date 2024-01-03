@@ -6,8 +6,13 @@
 package org.senergy.ams.sync;
 
 import SIPLlib.Helper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.entity.User;
+import org.senergy.ams.server.HttpHandlers.AmsServer;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  *
@@ -46,9 +51,15 @@ public class SyncOperations  {
     private static void processBbResponse(SyncPacket pkt) {
         switch (pkt.data[0])
         {
-            case (byte) (SyncCommands.AUTHENTICATION & 0xFF):
+            case (byte) (SyncCommands.GET_DATETIME & 0xFF):
             {
+                long epoch =Helper.getUint32_BE(pkt.data,1);
+                Date date=new Date(epoch*1000);
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+                // Format the current date and time using the defined formatter
+                String formattedDateTime = simpleDateFormat.format(date);
+                AmsServer.respObjectNode.put("date",formattedDateTime);
             }
             break;
             case (byte) (SyncCommands.EVENTS & 0xFF):

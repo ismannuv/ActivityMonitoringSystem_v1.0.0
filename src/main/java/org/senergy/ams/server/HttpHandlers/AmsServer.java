@@ -18,8 +18,12 @@ import org.senergy.ams.sync.SyncPacket;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class AmsServer implements HttpHandler {
+
+    public static ObjectNode respObjectNode;
     @Override
     public void handle(HttpExchange exchange) {
         String path = exchange.getRequestURI().getPath();
@@ -47,32 +51,51 @@ public class AmsServer implements HttpHandler {
             }
             InputStream requestBody = exchange.getRequestBody();
             ObjectMapper objectMapper = new ObjectMapper();
+            if (respObjectNode == null)
+            {
+                respObjectNode= objectMapper.createObjectNode();
+            }
             JsonNode jsonNode = objectMapper.readTree(requestBody);
             JsonJackson jsonRequest = new JsonJackson(jsonNode.toString());
             JsonJackson jsonResponse = new JsonJackson(jsonRequest.operation);
-            try {
-                switch (jsonRequest.operation){
-                    case SyncCommands.GET_DATETIME:
-                    {
-                        SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x12});
-                        if (AMS.serialComm.writeBytes(SyncPacket.encode(tx)))
-                        {
+            if(AMS.serialComm.isCabinetBusy()){
+                jsonResponse.setError("Cabinet is busy");
 
-                        }else{
+            }else{
+                try {
+                    switch (jsonRequest.operation){
+                        case SyncCommands.GET_DATETIME:
+                        {
+                            SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
+                            AMS.serialComm.exchangeNew(SyncPacket.encode(tx),2000);
+                            if(!respObjectNode.isEmpty())
+                            {
+
+                                jsonResponse.data.add(respObjectNode);
+                                jsonResponse.status=true;
+
+
+                            }else{
+                                jsonResponse.setError("failed to get resp or timeout");
+                            }
 
                         }
-                    }
-                    break;
-                    case SyncCommands.SET_ENROLLMENT_CMD:
-                    {
+                        break;
+                        case SyncCommands.SET_ENROLLMENT_CMD:
+                        {
 
+                        }
+                        break;
+                        default:
+                            jsonResponse.setError("operation not supported");
+                            break;
                     }
-                    break;
+                } catch (Exception ex) {
+                    jsonResponse.setError(ex);
+                    Helper.printStackTrace(ex);
                 }
-            } catch (Exception ex) {
-                jsonResponse.setError(ex);
-                Helper.printStackTrace(ex);
             }
+
 
             exchange.sendResponseHeaders(200, jsonResponse.toString().length());
             OutputStream os = exchange.getResponseBody();

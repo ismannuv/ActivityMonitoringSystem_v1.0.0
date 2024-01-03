@@ -8,6 +8,7 @@ import jssc.SerialPortEventListener;
 import jssc.SerialPortException;
 import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
+import org.senergy.ams.server.HttpHandlers.AmsServer;
 import org.senergy.ams.sync.SyncOperations;
 import org.senergy.ams.sync.SyncPacket;
 import org.senergy.ams.utils.Global;
@@ -27,12 +28,12 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     private STATES state=STATES.UNKNOWN,prevState=STATES.UNKNOWN;
     private RX_STATES rxState=RX_STATES.RX_START_BYTE,prevRxState=RX_STATES.UNKNOWN;
     private byte[] rxBuff=new byte[1024];
-    private boolean reqRecvd=false,cmdRecvd=false,cmdRespRecvd=false;
+    private boolean reqRecvd=false,cmdRecvd=false,cmdRespRecvd=false,cmdRespProcessed;
     private int delay=0;
     private int rxInPtr=0,dataPtr=0,dataLen=0,charTimeout=0,reqLen=0,pktError=0;
 
 
-    public void stateMachineNew()
+    public void stateMachine()
     {
         String result="";
         if(this.prevState!=this.state)
@@ -94,9 +95,11 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     }
                     break;
                 case OPEN:
-                    if(this.open(this,this.serialPort.MASK_RXCHAR))
+                    if(this.open(this, SerialPort.MASK_RXCHAR))
                     {
                         reqRecvd=false;
+                        cmdRespRecvd=false;
+                        cmdRespProcessed=false;
                         rxInPtr=0;
                         rxState=RX_STATES.RX_START_BYTE;
                         this.state=STATES.WAIT_FOR_REQ;
@@ -123,20 +126,30 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                         }
 
 //                        Config.logger.info("##### req :"+Helper.byteArrayToHexString(reqPacket));
-                        byte[] replyPacket = SyncOperations.process(reqPacket);
-                        if(replyPacket!=null && replyPacket.length>0)
-                        {
-                            this.serialPort.writeBytes(replyPacket);
-                            AMS.pktTx++;
-                            delay=10;
-                            this.state=STATES.SEND_WAIT;
-                        }
-                        else
-                        {
-                            Config.logger.info("-----> IN STATE STATES.SEND_WAIT");
+                        byte[] replyPacket=null;
+                        if(this.cmdRespRecvd){
+                            SyncOperations.process(reqPacket);
+                            this.cmdRespProcessed=true;
                             delay=2;
                             this.state=STATES.SEND_WAIT;
+                        }else{
+
+                            replyPacket = SyncOperations.process(reqPacket);
+                            if(replyPacket!=null && replyPacket.length>0)
+                            {
+                                this.serialPort.writeBytes(replyPacket);
+                                AMS.pktTx++;
+                                delay=10;
+                                this.state=STATES.SEND_WAIT;
+                            }
+                            else
+                            {
+                                Config.logger.info("-----> IN STATE STATES.SEND_WAIT");
+                                delay=2;
+                                this.state=STATES.SEND_WAIT;
+                            }
                         }
+
                     }
                     break;
                 case SEND_WAIT:
@@ -165,7 +178,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
             AMS.error=e.toString();
         }
     }
-    public void stateMachine()
+    /*public void stateMachineOld()
     {
         String result="";
         if(this.prevState!=this.state)
@@ -188,12 +201,12 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                         {
                             if(setServerDatetime(result))
                             {
-                                /*Device d=new Device();
-                                d.getServerConfig();
-                                if(d.serverIP!=null)
-                                {
-                                    setServerNetwork(d.serverIP,d.serverGateway,d.serverMask);
-                                }*/
+//                                Device d=new Device();
+//                                d.getServerConfig();
+//                                if(d.serverIP!=null)
+//                                {
+//                                    setServerNetwork(d.serverIP,d.serverGateway,d.serverMask);
+//                                }
                                 this.state=STATES.IDLE;
                             }
                             else
@@ -302,7 +315,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
             e.printStackTrace();
             AMS.error=e.toString();
         }
-    }
+    }*/
     public String getCabinetDatetime()
     {
         SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
@@ -312,7 +325,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
             SyncPacket rx=SyncPacket.decode(resp);
             if(rx!=null)
             {
-                long epoch =Helper.getUint32_BE(rx.data,0);
+                long epoch =Helper.getUint32_BE(rx.data,1);
                 Date date=new Date(epoch*1000);
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -320,7 +333,6 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                 String formattedDateTime = simpleDateFormat.format(date);
 
                 if((Config.logConfig&111)>0){
-
                     Config.logger.info("datetime :"+formattedDateTime);
                 }
                 return formattedDateTime;
@@ -405,6 +417,24 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     {
         this.cmdRecvd=false;
         Config.logger.info("Sync Resumed");
+    }
+    public void exchangeNew(byte[] tx ,int timeout){
+
+        if(this.isOpened()){
+            try {
+                this.serialPort.purgePort(SerialPort.PURGE_RXCLEAR);
+                this.cmdRespRecvd=false;
+                this.serialPort.writeBytes(tx);
+
+
+                while (AmsServer.respObjectNode.isEmpty()){
+
+                }
+
+            } catch (SerialPortException e) {
+                e.printStackTrace();
+            }
+        }
     }
     public byte[] exchange(byte[] tx,int rxTimeout)
     {
@@ -672,6 +702,9 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
         } catch (SerialPortException e) {
         }
         return false;
+    }
+    public boolean isCabinetBusy(){
+        return this.reqRecvd;
     }
 
 }
