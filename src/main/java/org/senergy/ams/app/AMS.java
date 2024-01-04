@@ -4,16 +4,13 @@ import SIPLlib.DBaccess2;
 import SIPLlib.SIPLlibException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import io.jsonwebtoken.Jwts;
 import org.senergy.ams.hw.KeySlot;
-import org.senergy.ams.hw.SerialConnection;
+import org.senergy.ams.hw.SerialConnectionService;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBconnection;
 import org.senergy.ams.model.LiveData;
-import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.ServerSync;
 
-import javax.crypto.SecretKey;
 import java.util.Date;
 
 public class AMS {
@@ -21,7 +18,7 @@ public class AMS {
     public static KeySlot[] keySlots;
 
     public static long pktRx=0,pktTx=0,secCount=0;
-    public static SerialConnection serialComm=null;
+    public static SerialConnectionService serialComm=null;
     public static String portAvailable="Unavailable";
     public static String processingPktFrom="",error="";
 
@@ -64,7 +61,7 @@ public class AMS {
     {
         if(serialComm==null)
         {
-            serialComm = new SerialConnection(Config.serialPort, Config.serialBaud);
+            serialComm = new SerialConnectionService(Config.serialPort, Config.serialBaud);
         }
         serialComm.run();
     }

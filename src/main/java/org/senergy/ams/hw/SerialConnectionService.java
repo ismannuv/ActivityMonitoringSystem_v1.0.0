@@ -14,11 +14,10 @@ import org.senergy.ams.sync.SyncPacket;
 import org.senergy.ams.utils.Global;
 
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-public class SerialConnection extends SerialCommunication implements SerialPortEventListener,Runnable {
-    public SerialConnection(String portName,int baud)
+public class SerialConnectionService extends SerialCommunication implements SerialPortEventListener,Runnable {
+    public SerialConnectionService(String portName, int baud)
     {
         super(portName,baud,8,1,0);
     }
@@ -34,15 +33,14 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
     private int delay=0;
     private int rxInPtr=0,dataPtr=0,dataLen=0,charTimeout=0,reqLen=0,pktError=0;
     private int sleepTime=10;
-    private int healthPktSendTimeout=6000;//60 sec
-    private CommandSync commandSync;
+    private CommandSyncService commandSync;
     @Override
     public void run() {
-        commandSync=new CommandSync();
-        commandSync.run();
+        commandSync=new CommandSyncService();
+        Thread t = new Thread(commandSync);
+        t.start();
         while (true) {
             try {
-
                 stateMachine();
                 Thread.sleep(sleepTime);
             }
@@ -67,50 +65,10 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
         try{
             switch(this.state)
             {
-                case CONFIG_DATETIME:
-                    if(this.delay==0)
-                    {
-                        result=getCabinetDatetime();
-                        if(result!=null)
-                        {
-                            if(setServerDatetime(result))
-                            {
-                                /*Device d=new Device();
-                                d.getServerConfig();
-                                if(d.serverIP!=null)
-                                {
-                                    setServerNetwork(d.serverIP,d.serverGateway,d.serverMask);
-                                }*/
-                                this.state=STATES.IDLE;
-                            }
-                            else
-                            {
-                                this.delay=100;
-                            }
-                        }
-                        else
-                        {
-                            this.delay=100;
-                        }
-                    }
-                    break;
                 case IDLE:
-                    if(AMS.IAPmode)
-                    {
-                        this.close();
-                        this.state=STATES.IAP;
-                    }
-                    else if(!this.cmdRecvd)
+                    if(!this.cmdRecvd)
                     {
                         this.state=STATES.OPEN;
-                    }
-
-                    break;
-                case IAP:
-                    if(AMS.IAPtimeout==0)
-                    {
-                        AMS.IAPmode=false;
-                        this.state=STATES.IDLE;
                     }
                     break;
                 case OPEN:
@@ -130,12 +88,10 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     }
                     break;
                 case WAIT_FOR_REQ:
-
                     if(this.reqRecvd || this.cmdRespRecvd)
                     {
                         if(this.reqRecvd){// if STM request received, slow down other commands for 1 min
-                            healthPktSendTimeout=6000;
-                            this.commandSync.setNextStateTimeout(600);
+                            this.commandSync.putThreadToIdleState();
                         }
                         byte[] reqPacket=new byte[this.reqLen];
                         System.arraycopy(this.rxBuff, 0, reqPacket, 0, this.reqLen);
@@ -191,15 +147,8 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
                     }
                     break;
                 default:
-                    if(Config.serverTimeSync)
-                    {
-                        this.delay=1000;
-                        this.state=STATES.CONFIG_DATETIME;
-                    }
-                    else
-                    {
-                        this.state=STATES.IDLE;
-                    }
+
+                    this.state=STATES.IDLE;
                     break;
             }
         }
@@ -739,6 +688,7 @@ public class SerialConnection extends SerialCommunication implements SerialPortE
         try {
             return this.serialPort.writeBytes(tx);
         } catch (SerialPortException e) {
+            e.printStackTrace();
         }
         return false;
     }

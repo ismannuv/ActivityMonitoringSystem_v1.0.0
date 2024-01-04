@@ -8,6 +8,7 @@ package org.senergy.ams.sync;
 import SIPLlib.Helper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.senergy.ams.app.AMS;
+import org.senergy.ams.model.Config;
 import org.senergy.ams.model.entity.User;
 import org.senergy.ams.server.HttpHandlers.AmsServer;
 
@@ -62,9 +63,9 @@ public class SyncOperations  {
                 AmsServer.respObjectNode.put("date",formattedDateTime);
             }
             break;
-            case (byte) (SyncCommands.EVENTS & 0xFF):
+            case (byte) (SyncCommands.SEND_HEALTH_PKT & 0xFF):
             {
-
+                Config.logger.info("health pkt resp received");
             }
             break;
             case (byte) (SyncCommands.GET_USER_ACTIVITY & 0xFF):
@@ -134,6 +135,8 @@ public class SyncOperations  {
         user.getUserBy(authType);
         System.out.println("user :"+user);
         int offSet=0;
+        Helper.setUint8(rx,offSet, pkt.data[0]);
+        offSet++;
         //cabinet policy 0 - single, 1 -dual auth policy
         Helper.setUint8(rx,offSet, (short) 1);
         offSet++;
