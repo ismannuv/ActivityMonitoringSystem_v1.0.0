@@ -15,12 +15,14 @@ import org.senergy.ams.utils.Global;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.*;
 
 public class SerialConnectionService extends SerialCommunication implements SerialPortEventListener,Runnable {
     public SerialConnectionService(String portName, int baud)
     {
         super(portName,baud,8,1,0);
     }
+
 
 
 
@@ -434,7 +436,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
                 timeout=10000;
             while (AmsServer.respObjectNode.isEmpty() && timeout>0){
 
-//                    Thread.sleep(sleeptime);
+                    Thread.sleep(sleeptime);
 //                System.out.println(timeout);
                 timeout=timeout-sleeptime;
             }
@@ -442,6 +444,54 @@ public class SerialConnectionService extends SerialCommunication implements Seri
            e.printStackTrace();
         }
 
+    }
+    public int exchangeWebCommand2(byte[] tx ,int timeout){
+        int status=0;//success
+        try {
+            status=executeWithTimeout(() -> {
+                this.commandSync.setBBCommand(tx,timeout);
+
+
+                while (AmsServer.respObjectNode.isEmpty()){
+                    //wait till response
+
+                }
+                return 1;// success
+            }, timeout);
+        } catch (ExecutionException e) {
+            status=2;//timeout
+        } catch (InterruptedException e) {
+            status=3;
+        } catch (TimeoutException e) {
+            status=4;
+        }
+        return status;
+        /*try {
+            this.commandSync.setBBCommand(tx,timeout);
+
+            int sleeptime=1;
+            if (timeout>10000)
+                timeout=10000;
+            while (AmsServer.respObjectNode.isEmpty() && timeout>0){
+
+                Thread.sleep(sleeptime);
+//                System.out.println(timeout);
+                timeout=timeout-sleeptime;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
+    }
+    public <T> T executeWithTimeout(Callable<T> task, long timeoutMillis) throws ExecutionException, InterruptedException, TimeoutException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<T> future = executor.submit(task);
+
+        try {
+            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+        } finally {
+            executor.shutdownNow(); // Shut down the executor service
+        }
     }
     public byte[] exchange(byte[] tx,int rxTimeout)
     {
@@ -704,7 +754,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         return retVal;
     }
 
-    public synchronized boolean writeBytes(byte[] tx){
+    public synchronized boolean writeBytesSynchronously(byte[] tx){
 
         try {
             return this.serialPort.writeBytes(tx);
@@ -716,7 +766,9 @@ public class SerialConnectionService extends SerialCommunication implements Seri
     public boolean isCabinetBusy(){
         return this.reqRecvd;
     }
-
+    public boolean isBBbusy() {
+        return this.commandSync.checkBBisBusy();
+    }
     public void setCmdRespProcessed() {
         this.cmdRespProcessed=true;
     }

@@ -58,8 +58,11 @@ public class AmsServer implements HttpHandler {
             JsonNode jsonNode = objectMapper.readTree(requestBody);
             JsonJackson jsonRequest = new JsonJackson(jsonNode.toString());
             JsonJackson jsonResponse = new JsonJackson(jsonRequest.operation);
-            if(AMS.serialComm.isCabinetBusy()){
+            if(AMS.serialComm.isCabinetBusy()) {
                 jsonResponse.setError("Cabinet is busy");
+            }
+            else if(AMS.serialComm.isBBbusy()){
+                jsonResponse.setError("BB is busy");
 
             }else{
                 try {
@@ -67,16 +70,22 @@ public class AmsServer implements HttpHandler {
                         case SyncCommands.GET_DATETIME:
                         {
                             SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
-                            AMS.serialComm.exchangeWebCommand(SyncPacket.encode(tx),5000);
-                            if(!respObjectNode.isEmpty())
-                            {
-                                jsonResponse.data.add(respObjectNode);
-                                jsonResponse.status=true;
+                            int status=AMS.serialComm.exchangeWebCommand2(SyncPacket.encode(tx),5000);
+                            if(status==1){
+                                if(!respObjectNode.isEmpty())
+                                {
+                                    jsonResponse.data.add(respObjectNode);
+                                    jsonResponse.status=true;
 
 
+                                }else{
+                                    jsonResponse.setError("failed to get resp.");
+                                    jsonResponse.errorCode=status;
+                                }
                             }else{
-                                jsonResponse.setError("failed to get resp or timeout");
+                                jsonResponse.setError(status,"Timeout.","failed to get resp.");
                             }
+
 
                         }
                         break;

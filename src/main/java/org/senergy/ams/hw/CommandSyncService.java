@@ -45,18 +45,25 @@ public class CommandSyncService implements Runnable{
         switch (this.state){
             case IDLE:
             {
-                if(this.BBCommand!=null){
+                if(this.nextState==STATES.IDLE){
+                    this.nextState=STATES.PREPARE_HEALTH_PKT;
+                }
+                if(AMS.serialComm.isOpened())
+                {
+                    if(this.BBCommand!=null){// if web cmd
 
-                    this.nextState=STATES.IDLE;
-                    this.nextStateTimeout=sixty_sec;
-                    this.state=STATES.SEND_COMMAND;
-                }else if(AMS.serialComm.isOpened()){
-                    if(this.nextStateTimeout<=0){
-                        this.state=this.nextState;
+                        this.nextStateTimeout=sixty_sec;
+                        this.nextState=STATES.IDLE;
+                        this.state=STATES.SEND_COMMAND;
                     }else {
-                        this.nextStateTimeout--;
+                        if(this.nextStateTimeout<=0){
+                            this.state=this.nextState;
+                        }else {
+                            this.nextStateTimeout--;
+                        }
                     }
                 }
+
 
             }
             break;
@@ -73,24 +80,20 @@ public class CommandSyncService implements Runnable{
                 System.arraycopy(this.rxData, 0, reqPacket, 0, this.rxLen);
                 this.setBBCommand(reqPacket,ten_sec);
 
-                this.nextStateTimeout=sixty_sec;
-                this.state=STATES.SEND_COMMAND;
+                this.nextStateTimeout=zero_sec;
                 this.nextState=STATES.CHECK_FOR_FP_SYNC_PKT;
+                this.state=STATES.SEND_COMMAND;
             }
             break;
             case CHECK_FOR_FP_SYNC_PKT:
             {
                 if(false)//fp cmd preset to sync
                 {
-
                     this.state=STATES.SEND_COMMAND;
                     this.nextState=STATES.CHECK_FOR_FP_SYNC_PKT;
 
                 }else{
-                    resetBBCommand();
-                    this.nextStateTimeout=sixty_sec;
-                    this.nextState=STATES.PREPARE_HEALTH_PKT;
-                    this.state=STATES.IDLE;
+                    resetStateToIdleHealthPkt();
                 }
                 /*byte[] reqPacket=new byte[this.rxLen];
                 System.arraycopy(this.rxData, 0, reqPacket, 0, this.rxLen);
@@ -117,7 +120,7 @@ public class CommandSyncService implements Runnable{
                 if (this.BBCommand!=null){
                     if (!AMS.serialComm.isCabinetBusy()){
                         Config.logger.info("sending health pkt");
-                        if(AMS.serialComm.writeBytes(this.BBCommand.data)){
+                        if(AMS.serialComm.writeBytesSynchronously(this.BBCommand.data)){
 
                             this.state=STATES.WAIT_FOR_CMD_RESP_TO_PROCESSED;
                             Config.logger.info("health pkt sent");
@@ -129,10 +132,7 @@ public class CommandSyncService implements Runnable{
                         Config.logger.info("cabinet busy");
                     }
                 }
-                resetBBCommand();
-                this.nextStateTimeout=sixty_sec;
-                this.nextState=STATES.PREPARE_HEALTH_PKT;
-                this.state=STATES.IDLE;
+                resetStateToIdleHealthPkt();
             }
             break;
             case WAIT_FOR_CMD_RESP_TO_PROCESSED:
@@ -145,10 +145,7 @@ public class CommandSyncService implements Runnable{
                     if (this.BBCommand.timeout > 0) {
                         this.BBCommand.timeout--;
                     } else {
-                        resetBBCommand();
-                        this.nextStateTimeout=sixty_sec;
-                        this.nextState=STATES.PREPARE_HEALTH_PKT;
-                        this.state=STATES.IDLE;
+                        resetStateToIdleHealthPkt();
                     }
                 }
 
@@ -161,7 +158,12 @@ public class CommandSyncService implements Runnable{
                 break;
         }
     }
-
+    private void resetStateToIdleHealthPkt(){
+        this.resetBBCommand();
+        this.nextStateTimeout=sixty_sec;
+        this.nextState=STATES.PREPARE_HEALTH_PKT;
+        this.state=STATES.IDLE;
+    }
     private void resetBBCommand() {
         this.BBCommand=null;
     }
@@ -178,9 +180,10 @@ public class CommandSyncService implements Runnable{
 
     }
     public void putThreadToIdleState(){
-        setNextStateTimeout(600);
-        this.state=STATES.IDLE;
-        this.nextState=STATES.PREPARE_HEALTH_PKT;
+        this.resetStateToIdleHealthPkt();
+    }
+    public boolean checkBBisBusy(){
+        return this.BBCommand !=null;
     }
     public void setBBCommand(byte[] data,int timeout){
         AMS.serialComm.resetCmdRespProcessed();
