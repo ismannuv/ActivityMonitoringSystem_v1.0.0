@@ -76,7 +76,6 @@ public class SerialConnectionService extends SerialCommunication implements Seri
                     {
                         reqRecvd=false;
                         cmdRespRecvd=false;
-                        cmdRespProcessed=false;
                         rxInPtr=0;
                         rxState=RX_STATES.RX_START_BYTE;
                         this.state=STATES.WAIT_FOR_REQ;
@@ -108,7 +107,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
                         byte[] replyPacket=null;
                         if(this.cmdRespRecvd){
                             SyncOperations.process(reqPacket);
-                            this.cmdRespProcessed=true;
+                            setCmdRespProcessed();
                             delay=2;
                             this.state=STATES.SEND_WAIT;
                         }else{
@@ -158,6 +157,8 @@ public class SerialConnectionService extends SerialCommunication implements Seri
             AMS.error=e.toString();
         }
     }
+
+
 
     private void sendHealthPacket() {
 
@@ -408,7 +409,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         if(this.isOpened()){
             try {
                 this.serialPort.purgePort(SerialPort.PURGE_RXCLEAR);
-                this.cmdRespRecvd=false;
+                this.resetCmdRespProcessed();
                 this.serialPort.writeBytes(tx);
 
                 int sleeptime=10;
@@ -423,6 +424,24 @@ public class SerialConnectionService extends SerialCommunication implements Seri
                 e.printStackTrace();
             }
         }
+    }
+    public void exchangeWebCommand(byte[] tx ,int timeout){
+        try {
+            this.commandSync.setBBCommand(tx,timeout);
+
+            int sleeptime=1;
+            if (timeout>10000)
+                timeout=10000;
+            while (AmsServer.respObjectNode.isEmpty() && timeout>0){
+
+//                    Thread.sleep(sleeptime);
+//                System.out.println(timeout);
+                timeout=timeout-sleeptime;
+            }
+        } catch (Exception e) {
+           e.printStackTrace();
+        }
+
     }
     public byte[] exchange(byte[] tx,int rxTimeout)
     {
@@ -684,7 +703,9 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         }
         return retVal;
     }
-    public boolean writeBytes(byte[] tx){
+
+    public synchronized boolean writeBytes(byte[] tx){
+
         try {
             return this.serialPort.writeBytes(tx);
         } catch (SerialPortException e) {
@@ -694,6 +715,17 @@ public class SerialConnectionService extends SerialCommunication implements Seri
     }
     public boolean isCabinetBusy(){
         return this.reqRecvd;
+    }
+
+    public void setCmdRespProcessed() {
+        this.cmdRespProcessed=true;
+    }
+
+    public void resetCmdRespProcessed() {
+        this.cmdRespProcessed=false;
+    }
+    public boolean checkCmdRespStatus(){
+        return this.cmdRespProcessed;
     }
 
 }

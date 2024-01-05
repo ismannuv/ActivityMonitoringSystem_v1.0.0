@@ -67,10 +67,9 @@ public class AmsServer implements HttpHandler {
                         case SyncCommands.GET_DATETIME:
                         {
                             SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
-                            AMS.serialComm.exchangeNew(SyncPacket.encode(tx),5000);
+                            AMS.serialComm.exchangeWebCommand(SyncPacket.encode(tx),5000);
                             if(!respObjectNode.isEmpty())
                             {
-
                                 jsonResponse.data.add(respObjectNode);
                                 jsonResponse.status=true;
 
