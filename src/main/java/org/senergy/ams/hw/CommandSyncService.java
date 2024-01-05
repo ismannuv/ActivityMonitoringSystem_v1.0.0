@@ -11,6 +11,8 @@ import java.util.Date;
 public class CommandSyncService implements Runnable{
     private BBCommand BBCommand;
 
+
+
     private static enum STATES{UNKNOWN,IDLE,PREPARE_HEALTH_PKT,CHECK_FOR_FP_SYNC_PKT,SEND_COMMAND,WAIT_FOR_CMD_RESP_TO_PROCESSED};
     private STATES state= STATES.UNKNOWN;
     private STATES prevState= STATES.UNKNOWN;
@@ -164,7 +166,7 @@ public class CommandSyncService implements Runnable{
         this.nextState=STATES.PREPARE_HEALTH_PKT;
         this.state=STATES.IDLE;
     }
-    private void resetBBCommand() {
+    public void resetBBCommand() {
         this.BBCommand=null;
     }
 

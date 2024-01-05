@@ -465,6 +465,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         } catch (TimeoutException e) {
             status=4;
         }
+        this.commandSync.resetBBCommand();
         return status;
         /*try {
             this.commandSync.setBBCommand(tx,timeout);
