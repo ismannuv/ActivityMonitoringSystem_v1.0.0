@@ -449,7 +449,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         int status=0;//success
         try {
             status=executeWithTimeout(() -> {
-                this.commandSync.setBBCommand(tx,timeout);
+                this.commandSync.setBBCommand(tx,timeout/this.commandSync.getSleepTime());
 
 
                 while (AmsServer.respObjectNode.isEmpty()){
@@ -465,7 +465,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
         } catch (TimeoutException e) {
             status=4;
         }
-        this.commandSync.resetBBCommand();
+//        this.commandSync.resetBBCommand();
         return status;
         /*try {
             this.commandSync.setBBCommand(tx,timeout);

@@ -6,6 +6,7 @@ import org.senergy.ams.model.Config;
 import org.senergy.ams.sync.SyncCommands;
 import org.senergy.ams.sync.SyncPacket;
 
+import java.util.Arrays;
 import java.util.Date;
 
 public class CommandSyncService implements Runnable{
@@ -13,10 +14,14 @@ public class CommandSyncService implements Runnable{
 
 
 
+
     private static enum STATES{UNKNOWN,IDLE,PREPARE_HEALTH_PKT,CHECK_FOR_FP_SYNC_PKT,SEND_COMMAND,WAIT_FOR_CMD_RESP_TO_PROCESSED};
     private STATES state= STATES.UNKNOWN;
     private STATES prevState= STATES.UNKNOWN;
     private STATES nextState= STATES.PREPARE_HEALTH_PKT;
+
+
+
     private int sleepTime=10;// 10 to 1000
     private int nextStateTimeout=600;
     private int sixty_sec=60000/sleepTime;
@@ -42,6 +47,7 @@ public class CommandSyncService implements Runnable{
         if(this.prevState!=this.state)
         {
             Config.logger.info("Command sync service State : "+this.prevState+"-->"+this.state +"-->"+this.nextState);
+            Config.logger.info("Command sync nextStateTimeout : "+this.nextStateTimeout);
             this.prevState=this.state;
         }
         switch (this.state){
@@ -121,14 +127,14 @@ public class CommandSyncService implements Runnable{
             {
                 if (this.BBCommand!=null){
                     if (!AMS.serialComm.isCabinetBusy()){
-                        Config.logger.info("sending health pkt");
+                        Config.logger.info("sending cmd pkt");
                         if(AMS.serialComm.writeBytesSynchronously(this.BBCommand.data)){
 
                             this.state=STATES.WAIT_FOR_CMD_RESP_TO_PROCESSED;
-                            Config.logger.info("health pkt sent");
+                            Config.logger.info("cmd pkt sent");
                             break;
                         }else {
-                            Config.logger.info("failed to send health pkt");
+                            Config.logger.info("failed to cmd pkt");
                         }
                     }else{
                         Config.logger.info("cabinet busy");
@@ -160,7 +166,11 @@ public class CommandSyncService implements Runnable{
                 break;
         }
     }
+    public int getSleepTime() {
+        return sleepTime;
+    }
     private void resetStateToIdleHealthPkt(){
+        System.out.println("####### resetStateToIdleHealthPkt");
         this.resetBBCommand();
         this.nextStateTimeout=sixty_sec;
         this.nextState=STATES.PREPARE_HEALTH_PKT;
@@ -197,9 +207,18 @@ public class CommandSyncService implements Runnable{
         byte[] data;
         int timeout;
 
+        @Override
+        public String toString() {
+            return "BBCommand{" +
+                    "data=" + Arrays.toString(data) +
+                    ", timeout=" + timeout +
+                    '}';
+        }
+
         public BBCommand(byte[] data, int timeout) {
             this.data = data;
-            this.timeout = timeout;
+            this.timeout = timeout;//
+            System.out.println(this);
         }
     }
 }

@@ -66,11 +66,11 @@ public class AmsServer implements HttpHandler {
 
             }else{
                 try {
+                    respObjectNode= objectMapper.createObjectNode();//empty respObjectNode before new request
                     switch (jsonRequest.operation){
                         case SyncCommands.GET_DATETIME:
                         {
-                            SyncPacket tx =new SyncPacket(SyncPacket.BB_PACKET, 0, new byte[]{0x11});
-                            int status=AMS.serialComm.exchangeWebCommand2(SyncPacket.encode(tx),5000);
+                            int status=AMS.serialComm.exchangeWebCommand2(new byte[]{0x11},5000);
                             if(status==1){
                                 if(!respObjectNode.isEmpty())
                                 {
