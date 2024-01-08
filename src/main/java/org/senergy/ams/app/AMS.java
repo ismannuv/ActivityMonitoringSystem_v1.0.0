@@ -4,6 +4,7 @@ import SIPLlib.DBaccess2;
 import SIPLlib.SIPLlibException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import org.senergy.ams.hw.CommandSyncService;
 import org.senergy.ams.hw.KeySlot;
 import org.senergy.ams.hw.SerialConnectionService;
 import org.senergy.ams.model.Config;
@@ -24,6 +25,7 @@ public class AMS {
 
     public static boolean IAPmode=false;
     public static int IAPtimeout=0;
+    public static CommandSyncService commandSync;
 
 
     public static void main(String[] args) throws Exception {
@@ -31,7 +33,9 @@ public class AMS {
         config.init();
         ServerSync.start(Config.serverIp,Config.serverPort);
 //        SecretKey key = Jwts.SIG.HS256.key().build();
-
+        commandSync=new CommandSyncService();
+        Thread t = new Thread(commandSync);
+        t.start();
         serialListen();
 
         /*while (true) {

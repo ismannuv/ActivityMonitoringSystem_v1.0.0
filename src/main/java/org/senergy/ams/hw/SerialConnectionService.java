@@ -35,12 +35,9 @@ public class SerialConnectionService extends SerialCommunication implements Seri
     private int delay=0;
     private int rxInPtr=0,dataPtr=0,dataLen=0,charTimeout=0,reqLen=0,pktError=0;
     private int sleepTime=10;
-    private CommandSyncService commandSync;
     @Override
     public void run() {
-        commandSync=new CommandSyncService();
-        Thread t = new Thread(commandSync);
-        t.start();
+
         while (true) {
             try {
                 stateMachine();
@@ -92,7 +89,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
                     if(this.reqRecvd || this.cmdRespRecvd)
                     {
                         if(this.reqRecvd){// if STM request received, slow down other commands for 1 min
-                            this.commandSync.putThreadToIdleState();
+                            AMS.commandSync.putThreadToIdleState();
                         }
                         byte[] reqPacket=new byte[this.reqLen];
                         System.arraycopy(this.rxBuff, 0, reqPacket, 0, this.reqLen);
@@ -427,7 +424,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
             }
         }
     }
-    public void exchangeWebCommand(byte[] tx ,int timeout){
+    /*public void exchangeWebCommand(byte[] tx ,int timeout){
         try {
             this.commandSync.setBBCommand(tx,timeout);
 
@@ -444,56 +441,8 @@ public class SerialConnectionService extends SerialCommunication implements Seri
            e.printStackTrace();
         }
 
-    }
-    public int exchangeWebCommand2(byte[] tx ,int timeout){
-        int status=0;//success
-        try {
-            status=executeWithTimeout(() -> {
-                this.commandSync.setBBCommand(tx,timeout/this.commandSync.getSleepTime());
+    }*/
 
-
-                while (AmsServer.respObjectNode.isEmpty()){
-                    //wait till response
-
-                }
-                return 1;// success
-            }, timeout);
-        } catch (ExecutionException e) {
-            status=2;//timeout
-        } catch (InterruptedException e) {
-            status=3;
-        } catch (TimeoutException e) {
-            status=4;
-        }
-//        this.commandSync.resetBBCommand();
-        return status;
-        /*try {
-            this.commandSync.setBBCommand(tx,timeout);
-
-            int sleeptime=1;
-            if (timeout>10000)
-                timeout=10000;
-            while (AmsServer.respObjectNode.isEmpty() && timeout>0){
-
-                Thread.sleep(sleeptime);
-//                System.out.println(timeout);
-                timeout=timeout-sleeptime;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
-    }
-    public <T> T executeWithTimeout(Callable<T> task, long timeoutMillis) throws ExecutionException, InterruptedException, TimeoutException {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<T> future = executor.submit(task);
-
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } finally {
-            executor.shutdownNow(); // Shut down the executor service
-        }
-    }
     public byte[] exchange(byte[] tx,int rxTimeout)
     {
         Config.logger.info("Sending Cammand");
@@ -767,9 +716,7 @@ public class SerialConnectionService extends SerialCommunication implements Seri
     public boolean isCabinetBusy(){
         return this.reqRecvd;
     }
-    public boolean isBBbusy() {
-        return this.commandSync.checkBBisBusy();
-    }
+
     public void setCmdRespProcessed() {
         this.cmdRespProcessed=true;
     }

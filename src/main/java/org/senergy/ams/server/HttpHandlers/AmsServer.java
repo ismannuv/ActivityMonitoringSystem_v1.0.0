@@ -61,7 +61,7 @@ public class AmsServer implements HttpHandler {
             if(AMS.serialComm.isCabinetBusy()) {
                 jsonResponse.setError("Cabinet is busy");
             }
-            else if(AMS.serialComm.isBBbusy()){
+            else if(AMS.commandSync.isBBbusy()){
                 jsonResponse.setError("BB is busy");
 
             }else{
@@ -70,7 +70,7 @@ public class AmsServer implements HttpHandler {
                     switch (jsonRequest.operation){
                         case SyncCommands.GET_DATETIME:
                         {
-                            int status=AMS.serialComm.exchangeWebCommand2(new byte[]{0x11},5000);
+                            int status=AMS.commandSync.exchangeWebCommand(new byte[]{0x11},5000);
                             if(status==1){
                                 if(!respObjectNode.isEmpty())
                                 {

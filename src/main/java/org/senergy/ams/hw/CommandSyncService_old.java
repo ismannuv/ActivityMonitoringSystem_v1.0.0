@@ -3,15 +3,13 @@ package org.senergy.ams.hw;
 import SIPLlib.Helper;
 import org.senergy.ams.app.AMS;
 import org.senergy.ams.model.Config;
-import org.senergy.ams.server.HttpHandlers.AmsServer;
 import org.senergy.ams.sync.SyncCommands;
 import org.senergy.ams.sync.SyncPacket;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.*;
 
-public class CommandSyncService implements Runnable{
+public class CommandSyncService_old implements Runnable{
     private BBCommand BBCommand;
 
 
@@ -31,7 +29,6 @@ public class CommandSyncService implements Runnable{
     private int zero_sec= 0;
     private byte[] rxData=new byte[1024];
     private int rxLen=0;
-    private int fpStateCnt=5;
     @Override
     public void run() {
         while (true) {
@@ -53,22 +50,19 @@ public class CommandSyncService implements Runnable{
             Config.logger.info("Command sync nextStateTimeout : "+this.nextStateTimeout);
             this.prevState=this.state;
         }
-        if(this.state == STATES.CHECK_FOR_FP_SYNC_PKT && this.fpStateCnt<=0){//change FP sync state after 5 iteration to health pkt state
-            resetStateToIdleHealthPkt();
-        }
         switch (this.state){
             case IDLE:
             {
-                if(this.nextState==STATES.IDLE){
-                    this.nextState=STATES.PREPARE_HEALTH_PKT;
+                if(this.nextState== STATES.IDLE){
+                    this.nextState= STATES.PREPARE_HEALTH_PKT;
                 }
                 if(AMS.serialComm.isOpened())
                 {
                     if(this.BBCommand!=null){// if web cmd
 
                         this.nextStateTimeout=sixty_sec;
-                        this.nextState=STATES.IDLE;
-                        this.state=STATES.SEND_COMMAND;
+                        this.nextState= STATES.IDLE;
+                        this.state= STATES.SEND_COMMAND;
                     }else {
                         if(this.nextStateTimeout<=0){
                             this.state=this.nextState;
@@ -95,20 +89,16 @@ public class CommandSyncService implements Runnable{
                 this.setBBCommand(reqPacket,ten_sec);
 
                 this.nextStateTimeout=zero_sec;
-                this.nextState=STATES.CHECK_FOR_FP_SYNC_PKT;
-                this.state=STATES.SEND_COMMAND;
+                this.nextState= STATES.CHECK_FOR_FP_SYNC_PKT;
+                this.state= STATES.SEND_COMMAND;
             }
             break;
             case CHECK_FOR_FP_SYNC_PKT:
             {
-                fpStateCnt--;
-                byte[] fpRxPkt = getFpSyncPkt();
-                if(fpRxPkt !=null)//fp cmd present to sync
+                if(false)//fp cmd preset to sync
                 {
-                    this.setBBCommand(fpRxPkt,ten_sec);
-                    this.state=STATES.SEND_COMMAND;
-                    this.nextStateTimeout=sixty_sec;
-                    this.nextState=STATES.PREPARE_HEALTH_PKT;// alternate heath pkt then FP then again Health pkt
+                    this.state= STATES.SEND_COMMAND;
+                    this.nextState= STATES.CHECK_FOR_FP_SYNC_PKT;
 
                 }else{
                     resetStateToIdleHealthPkt();
@@ -140,7 +130,7 @@ public class CommandSyncService implements Runnable{
                         Config.logger.info("sending cmd pkt");
                         if(AMS.serialComm.writeBytesSynchronously(this.BBCommand.data)){
 
-                            this.state=STATES.WAIT_FOR_CMD_RESP_TO_PROCESSED;
+                            this.state= STATES.WAIT_FOR_CMD_RESP_TO_PROCESSED;
                             Config.logger.info("cmd pkt sent");
                             break;
                         }else {
@@ -157,7 +147,7 @@ public class CommandSyncService implements Runnable{
             {
                 if(AMS.serialComm.checkCmdRespStatus()){
                     resetBBCommand();
-                    this.state=STATES.IDLE;
+                    this.state= STATES.IDLE;
 
                 }else {
                     if (this.BBCommand.timeout > 0) {
@@ -171,26 +161,20 @@ public class CommandSyncService implements Runnable{
             break;
             default:
                 this.nextStateTimeout=sixty_sec;
-                this.nextState=STATES.PREPARE_HEALTH_PKT;
-                this.state=STATES.IDLE;
+                this.nextState= STATES.PREPARE_HEALTH_PKT;
+                this.state= STATES.IDLE;
                 break;
         }
     }
-
-    private byte[] getFpSyncPkt() {
-        return null;
-    }
-
     public int getSleepTime() {
         return sleepTime;
     }
     private void resetStateToIdleHealthPkt(){
-        this.fpStateCnt=5;
         System.out.println("####### resetStateToIdleHealthPkt");
         this.resetBBCommand();
         this.nextStateTimeout=sixty_sec;
-        this.nextState=STATES.PREPARE_HEALTH_PKT;
-        this.state=STATES.IDLE;
+        this.nextState= STATES.PREPARE_HEALTH_PKT;
+        this.state= STATES.IDLE;
     }
     public void resetBBCommand() {
         this.BBCommand=null;
@@ -209,6 +193,9 @@ public class CommandSyncService implements Runnable{
     }
     public void putThreadToIdleState(){
         this.resetStateToIdleHealthPkt();
+    }
+    public boolean checkBBisBusy(){
+        return this.BBCommand !=null;
     }
     public void setBBCommand(byte[] data,int timeout){
         AMS.serialComm.resetCmdRespProcessed();
@@ -232,58 +219,6 @@ public class CommandSyncService implements Runnable{
             this.data = data;
             this.timeout = timeout;//
             System.out.println(this);
-        }
-    }
-    public boolean isBBbusy() {
-        return this.BBCommand !=null;
-    }
-    public int exchangeWebCommand(byte[] tx ,int timeout){
-        int status=0;//success
-        try {
-            status=executeWithTimeout(() -> {
-                this.setBBCommand(tx,timeout/this.getSleepTime());
-
-
-                while (AmsServer.respObjectNode.isEmpty()){
-                    //wait till response
-
-                }
-                return 1;// success
-            }, timeout);
-        } catch (ExecutionException e) {
-            status=2;//timeout
-        } catch (InterruptedException e) {
-            status=3;
-        } catch (TimeoutException e) {
-            status=4;
-        }
-//        this.commandSync.resetBBCommand();
-        return status;
-        /*try {
-            this.commandSync.setBBCommand(tx,timeout);
-
-            int sleeptime=1;
-            if (timeout>10000)
-                timeout=10000;
-            while (AmsServer.respObjectNode.isEmpty() && timeout>0){
-
-                Thread.sleep(sleeptime);
-//                System.out.println(timeout);
-                timeout=timeout-sleeptime;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
-    }
-    public <T> T executeWithTimeout(Callable<T> task, long timeoutMillis) throws ExecutionException, InterruptedException, TimeoutException {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Future<T> future = executor.submit(task);
-
-        try {
-            return future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-        } finally {
-            executor.shutdownNow(); // Shut down the executor service
         }
     }
 }
