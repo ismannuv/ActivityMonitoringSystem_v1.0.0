@@ -63,6 +63,47 @@ public class SyncOperations  {
                 AmsServer.respObjectNode.put("date",formattedDateTime);
             }
             break;
+            case (byte) (SyncCommands.SET_ENROLLMENT_CMD & 0xFF):
+            {
+                int status = Helper.getUint8(pkt.data,1);
+                if(status==1){
+                    AmsServer.respObjectNode.put("status",status);
+                }else {
+                    AmsServer.respObjectNode.put("status",0);
+                    AmsServer.respObjectNode.put("error","Cabinet busy");
+                }
+                /*switch (replyOf)
+                {
+                    case 0://card
+                        break;
+                    case 1://fp
+                        break;
+                    case 2://key uid enroll
+                        break;
+                }*/
+            }
+            break;
+            case (byte) (SyncCommands.GET_ENROLLMENT_CMD_STATUS & 0xFF):
+            {
+                int replyOf = Helper.getUint8(pkt.data,1);
+                int status = Helper.getUint8(pkt.data,2);//0- Pending ,1- Success , 2- failed ,3 -timeout
+                if (status==1){
+                    switch (replyOf)
+                    {
+                        case 0://card
+
+                            break;
+                        case 1://fp
+                            break;
+                        case 2://key uid enroll
+                            break;
+                    }
+                }else{
+                    AmsServer.respObjectNode.put("status",status);
+                }
+
+            }
+            break;
             case (byte) (SyncCommands.SEND_HEALTH_PKT & 0xFF):
             {
                 Config.logger.info("health pkt resp received");

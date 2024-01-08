@@ -91,6 +91,25 @@ public class AmsServer implements HttpHandler {
                         break;
                         case SyncCommands.SET_ENROLLMENT_CMD:
                         {
+                            int status=AMS.commandSync.exchangeWebCommand(new byte[]{0x16},5000);
+                            if(status==1){
+                                if(!respObjectNode.isEmpty())
+                                {
+                                    jsonResponse.data.add(respObjectNode);
+                                    jsonResponse.status=true;
+
+
+                                }else{
+                                    jsonResponse.setError("failed to get resp.");
+                                    jsonResponse.errorCode=status;
+                                }
+                            }else{
+                                jsonResponse.setError(status,"Timeout.","failed to get resp.");
+                            }
+                        }
+                        break;
+                        case SyncCommands.GET_ENROLLMENT_CMD_STATUS:
+                        {
 
                         }
                         break;
