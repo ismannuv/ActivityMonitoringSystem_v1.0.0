@@ -1,6 +1,7 @@
 package org.senergy.ams.app;
 
 import SIPLlib.DBaccess2;
+import SIPLlib.DataTable;
 import SIPLlib.SIPLlibException;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -9,7 +10,9 @@ import org.senergy.ams.hw.KeySlot;
 import org.senergy.ams.hw.SerialConnectionService;
 import org.senergy.ams.model.Config;
 import org.senergy.ams.model.DBconnection;
+import org.senergy.ams.model.DBoperationException;
 import org.senergy.ams.model.LiveData;
+import org.senergy.ams.model.entity.Key;
 import org.senergy.ams.server.ServerSync;
 
 import java.util.Date;
@@ -87,9 +90,24 @@ public class AMS {
         }
     }
     private static void initKeySlot(){
+        //initializing key slots
         AMS.keySlots=new KeySlot[32];
         for (int i = 0; i < keySlots.length; i++) {
             AMS.keySlots[i]=new KeySlot();
+        }
+        //getting all configured keys
+        try {
+            DBaccess2 DBcon=DBconnection.newInstance();
+            String qry = "Select k.tagUid from key k order by k.position";
+            if (DBcon.dqlQuery(qry)) {
+                DataTable dt = DBcon.getResultSet();
+                Key key = null;
+                while (dt.next()) {
+                    AMS.keySlots[dt.getInt("position")-1].setConfiguredTagUid(dt.getBigInteger("tagUid"));
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
