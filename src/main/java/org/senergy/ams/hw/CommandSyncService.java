@@ -13,8 +13,11 @@ import java.util.concurrent.*;
 
 public class CommandSyncService implements Runnable{
     private BBCommand BBCommand;
+    private boolean datetimeConfigured;
 
 
+
+    private boolean gotCurrentKeyStatus;
 
 
     private static enum STATES{UNKNOWN,CONFIGURE_DATETIME,IDLE,PREPARE_HEALTH_PKT,CHECK_FOR_FP_SYNC_PKT,SEND_COMMAND,WAIT_FOR_CMD_RESP_TO_PROCESSED};
@@ -57,12 +60,33 @@ public class CommandSyncService implements Runnable{
             resetStateToIdleHealthPkt();
         }
         switch (this.state){
+            case CONFIGURE_DATETIME:
+            {
+                if(!this.datetimeConfigured){
+                    setDateTimeCmd();
+
+                    this.nextStateTimeout=sixty_sec;//wait for 60 sec and send again datetime cmd
+                    this.nextState=STATES.CONFIGURE_DATETIME;
+                    this.state=STATES.SEND_COMMAND;
+
+                }else if (!this.gotCurrentKeyStatus){//send get all current
+                    setGetAllKeyStatusCmd();
+
+                    this.nextStateTimeout=sixty_sec;
+                    this.nextState=STATES.CONFIGURE_DATETIME;
+                    this.state=STATES.SEND_COMMAND;
+                }else {
+                    resetToIdleState(sixty_sec);
+                }
+
+            }
+            break;
             case IDLE:
             {
                 if(this.nextState==STATES.IDLE){
                     this.nextState=STATES.PREPARE_HEALTH_PKT;
                 }
-                if(AMS.serialComm.isOpened())
+                if(!AMS.serialComm.isOpened())
                 {
                     if(this.BBCommand!=null){// if web cmd
 
@@ -88,10 +112,10 @@ public class CommandSyncService implements Runnable{
                 this.rxLen++;
                 Helper.setUint32_BE(this.rxData,this.rxLen,new Date().getTime());
                 this.rxLen+=4;
-
-                //setting cmd for STM
                 byte[] reqPacket=new byte[this.rxLen];
                 System.arraycopy(this.rxData, 0, reqPacket, 0, this.rxLen);
+                //setting cmd for STM
+
                 this.setBBCommand(reqPacket,ten_sec);
 
                 this.nextStateTimeout=zero_sec;
@@ -144,26 +168,27 @@ public class CommandSyncService implements Runnable{
                             Config.logger.info("cmd pkt sent");
                             break;
                         }else {
-                            Config.logger.info("failed to cmd pkt");
+                            Config.logger.info("failed to send cmd pkt");
                         }
                     }else{
                         Config.logger.info("cabinet busy");
                     }
                 }
-                resetStateToIdleHealthPkt();
+                resetToIdleState(sixty_sec);
+
             }
             break;
             case WAIT_FOR_CMD_RESP_TO_PROCESSED:
             {
                 if(AMS.serialComm.checkCmdRespStatus()){
-                    resetBBCommand();
-                    this.state=STATES.IDLE;
+                    resetToIdleState(zero_sec);
 
                 }else {
                     if (this.BBCommand.timeout > 0) {
                         this.BBCommand.timeout--;
                     } else {
-                        resetStateToIdleHealthPkt();
+//                        resetStateToIdleHealthPkt();
+                        resetToIdleState(sixty_sec);
                     }
                 }
 
@@ -171,10 +196,26 @@ public class CommandSyncService implements Runnable{
             break;
             default:
                 this.nextStateTimeout=sixty_sec;
-                this.nextState=STATES.PREPARE_HEALTH_PKT;
-                this.state=STATES.IDLE;
+                this.nextState=STATES.CONFIGURE_DATETIME;
+                this.state=STATES.CONFIGURE_DATETIME;
                 break;
         }
+    }
+
+    private void setGetAllKeyStatusCmd() {
+        this.rxLen=0;
+        Helper.setUint8(this.rxData,this.rxLen, (short) SyncCommands.GET_ALL_CURRENT_KEY_STATUS);
+        byte[] reqPacket=new byte[this.rxLen];
+        System.arraycopy(this.rxData, 0, reqPacket, 0, this.rxLen);
+        this.setBBCommand(reqPacket,ten_sec);
+    }
+
+    private void setDateTimeCmd() {
+        this.rxLen=0;
+        Helper.setUint8(this.rxData,this.rxLen, (short) SyncCommands.GET_DATETIME);
+        byte[] reqPacket=new byte[this.rxLen];
+        System.arraycopy(this.rxData, 0, reqPacket, 0, this.rxLen);
+        this.setBBCommand(reqPacket,ten_sec);
     }
 
     private byte[] getFpSyncPkt() {
@@ -192,6 +233,13 @@ public class CommandSyncService implements Runnable{
         this.nextState=STATES.PREPARE_HEALTH_PKT;
         this.state=STATES.IDLE;
     }
+    private void resetToIdleState(int timeout){
+        this.fpStateCnt=5;
+        System.out.println("####### resetToIdleState");
+        this.resetBBCommand();
+        this.nextStateTimeout=timeout;
+        this.state=STATES.IDLE;
+    }
     public void resetBBCommand() {
         this.BBCommand=null;
     }
@@ -206,6 +254,9 @@ public class CommandSyncService implements Runnable{
     public void slowDownCommandSync(){
         setNextStateTimeout(600);
 
+    }
+    public void setGotCurrentKeyStatus(boolean gotCurrentKeyStatus) {
+        this.gotCurrentKeyStatus = gotCurrentKeyStatus;
     }
     public void putThreadToIdleState(){
         this.resetStateToIdleHealthPkt();

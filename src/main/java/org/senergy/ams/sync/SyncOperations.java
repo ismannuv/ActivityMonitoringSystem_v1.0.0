@@ -109,9 +109,18 @@ public class SyncOperations  {
                 Config.logger.info("health pkt resp received");
             }
             break;
-            case (byte) (SyncCommands.GET_USER_ACTIVITY & 0xFF):
+            case (byte) (SyncCommands.GET_ALL_CURRENT_KEY_STATUS & 0xFF):
             {
-
+                int offset=0;
+                int status = Helper.getUint8(pkt.data,1);// cmd status 0- failed 1- success
+                offset++;
+                if(status==1){
+                    for (int i = 0; i < AMS.keySlots.length; i++) {
+                        AMS.keySlots[i].setPresentTagUid(Helper.getUint64_BE(pkt.data,offset));
+                        offset+=8;
+                    }
+                    AMS.commandSync.setGotCurrentKeyStatus(true);
+                }
             }
             break;
 
